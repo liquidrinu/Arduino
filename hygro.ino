@@ -38,8 +38,7 @@ void loop() {
   }
 
   // prints
-  Serial.write(12);       // ESC command
-  //Serial.write("[2j");  // clear terminal
+  Serial.write(12);       // clear terminal
 
   Serial.println("-----------------------");
   Serial.print(" Air Humidity: ");
