@@ -1,4 +1,4 @@
-//constants
+// hygrometer
 const int hygrometer = A7;
 
 int value = 0;
@@ -8,6 +8,7 @@ int treshold = 20;
 const int sa1 = A0; // treshold
 const int sa2 = A1; // value
 
+// temp/humidity sensor
 #include "DHT.h"
 #define DHTPIN 6 // pinDATA
 #define DHTTYPE DHT11 // sensor
