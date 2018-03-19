@@ -203,15 +203,7 @@ int leds() {
   if (power == true) {
     if (value < treshold) {
       digitalWrite(sa2, LOW);
-      // blink effect
-      for (int i = 0; i < 10; i++) {
-        for (int j = 0; j < 2; j++) {
-          digitalWrite(sa1, HIGH);
-          delay(100);
-          digitalWrite(sa1, LOW);
-          delay(100);
-        }
-      }
+      digitalWrite(sa1, HIGH);
     } else {
       digitalWrite(sa1, LOW);
       digitalWrite(sa2, HIGH);
