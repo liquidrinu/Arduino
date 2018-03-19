@@ -112,7 +112,6 @@ void loop(void) {
   leds();
 
   delay(100);
-
 }
 
 //////////////////////
@@ -221,32 +220,4 @@ int leds() {
     digitalWrite(sa1, LOW);
     digitalWrite(sa2, LOW);
   }
-}
-
-// LCD screen (not operational)
-int lcdPRINT() {
-
-  // Temperature + Humidity
-  float x = dht.readHumidity();
-  // Read temperature as Celsius
-  float y = dht.readTemperature();
-
-  Serial.println("-----------------------");
-  Serial.print(" Air Humidity: ");
-  Serial.print(x);
-  Serial.println(" %\t");
-  Serial.print(" Temperature: ");
-  Serial.print(y);
-  Serial.println(" *C ");
-  Serial.print(" Soil: ");
-  Serial.print(value);
-  Serial.print("%");
-
-  if (value < treshold) {
-    Serial.println(" ** Needs watering! **");
-  } else {
-    Serial.println("");
-  }
-
-  Serial.println("-----------------------");
 }
