@@ -14,14 +14,18 @@ const int led = 4;
 //////////////////
 int power = true;
 
+// Async
+unsigned long previousMillis = 0;
+const long interval = 500;
+int errorState = LOW;
+
 // leds
 const int sa1 = 0; // treshold
 const int sa2 = 2; // value
 
 // touch sensor
-int TouchSensor = 14; // Pin for capactitive touch sensor
+int TouchSensor = 14;
 int TouchLed = 13;
-
 boolean currentState = LOW;
 boolean lastState = LOW;
 boolean LedState = LOW;
@@ -110,7 +114,7 @@ void loop(void) {
   stdby();
   readings();
   leds();
-
+  async();
   delay(100);
 }
 
@@ -187,7 +191,6 @@ int stdby() {
     if (LedState == HIGH) {
       digitalWrite(TouchLed, LOW);
       LedState = LOW;
-      // execute measurements
       power = true;
     } else {
       digitalWrite(TouchLed, HIGH);
@@ -200,16 +203,37 @@ int stdby() {
 
 // led monitor for soil
 int leds() {
+
   if (power == true) {
     if (value < treshold) {
       digitalWrite(sa2, LOW);
-      digitalWrite(sa1, HIGH);
+      //digitalWrite(sa1, HIGH);
+
     } else {
-      digitalWrite(sa1, LOW);
       digitalWrite(sa2, HIGH);
+      digitalWrite(sa1, LOW);
     }
   } else {
     digitalWrite(sa1, LOW);
     digitalWrite(sa2, LOW);
+  }
+}
+
+// Millis
+int async () {
+
+  unsigned long currentMillis = millis();
+  if (power == true && value < treshold) {
+    if (currentMillis - previousMillis >= interval) {
+      previousMillis = currentMillis;
+
+      // Led Switch
+      if (errorState == LOW) {
+        errorState = HIGH;
+      } else {
+        errorState = LOW;
+      }
+      digitalWrite(sa1, errorState);
+    }
   }
 }
