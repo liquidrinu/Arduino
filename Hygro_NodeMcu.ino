@@ -7,11 +7,11 @@ const char* ssid = "secret";
 const char* password = "secret";
 
 ESP8266WebServer server(80);
-const int led = 4;
+const int led = 15;
 
-//////////////////
-// Sensor Logic //
-//////////////////
+////////////////////////////////
+// Sensor Logic & Pins 
+////////////////////////////////
 int power = true;
 
 // Async
@@ -34,7 +34,7 @@ boolean LedState = LOW;
 #define DHTPIN 12 // pinDATA
 #define DHTTYPE DHT11 // sensor
 DHT dht(DHTPIN, DHTTYPE);
-////////////////////////////////////
+////////////////////////////////
 
 void handleRoot() {
   digitalWrite(led, 1);
