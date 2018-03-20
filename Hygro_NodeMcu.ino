@@ -10,7 +10,7 @@ ESP8266WebServer server(80);
 const int led = 15;
 
 ////////////////////////////////
-// Sensor Logic & Pins 
+// Sensor Logic & Pins
 ////////////////////////////////
 int power = true;
 
@@ -113,9 +113,8 @@ void loop(void) {
 
   stdby();
   readings();
-  leds();
-  async();
-  delay(100);
+  async_leds();
+  //delay(100);
 }
 
 //////////////////////
@@ -201,39 +200,27 @@ int stdby() {
   lastState = currentState;
 }
 
-// led monitor for soil
-int leds() {
-
-  if (power == true) {
-    if (value < treshold) {
-      digitalWrite(sa2, LOW);
-      //digitalWrite(sa1, HIGH);
-
-    } else {
-      digitalWrite(sa2, HIGH);
-      digitalWrite(sa1, LOW);
-    }
-  } else {
-    digitalWrite(sa1, LOW);
-    digitalWrite(sa2, LOW);
-  }
-}
-
-// Millis
-int async () {
+// Led monitpr async
+int async_leds () {
 
   unsigned long currentMillis = millis();
-  if (power == true && value < treshold) {
-    if (currentMillis - previousMillis >= interval) {
-      previousMillis = currentMillis;
+  if (power == true) {
+    if (value < treshold) {
+      if (currentMillis - previousMillis >= interval) {
+        previousMillis = currentMillis;
 
-      // Led Switch
-      if (errorState == LOW) {
-        errorState = HIGH;
-      } else {
-        errorState = LOW;
+        // Led Switch
+        if (errorState == LOW) {
+          errorState = HIGH;
+        } else {
+          errorState = LOW;
+        }
+        digitalWrite(sa1, errorState);
       }
-      digitalWrite(sa1, errorState);
+      digitalWrite(sa2, LOW);
+    }  else {
+      digitalWrite(sa2, HIGH);
+      digitalWrite(sa1, LOW);
     }
   }
 }
