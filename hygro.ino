@@ -1,82 +1,293 @@
-// hygrometer
-const int hygrometer = A7;
+#include <ESP8266WiFi.h>
+#include <WiFiClient.h>
+#include <ESP8266WebServer.h>
+#include <ESP8266mDNS.h>
 
+// LCD
+//#include <Wire.h>
+//#include <LCD.h>
+//#include <LiquidCrystal_I2C.h>
+//LiquidCrystal_I2C lcd(0x3F, 20, 4);
+
+// WIFI credentials
+const char* ssid = "secret";
+const char* password = "secret";
+
+ESP8266WebServer server(80);
+const int led = 22;
+
+////////////////////////////////
+// Sensor Logic & Pins
+////////////////////////////////
+int power = true;
+
+// Async
+unsigned long previousMillis = 0;
+const long interval = 500;
+int errorState = LOW;
+
+// Soil
+const int hygrometer = A0;
+
+// leds
+volatile int q = 0; //initializing a integer for incrementing and decrementing duty ratio.
+const int sa1 = 2; // treshold
+const int sa2 = 0; // value
+
+// touch sensor
+int TouchSensor = 14;
+int TouchLed = 13;
+boolean currentState = LOW;
+boolean lastState = LOW;
+boolean LedState = LOW;
+
+#include <Adafruit_Sensor.h>
+#include "DHT.h"
+#define DHTPIN 12 // pinDATA
+#define DHTTYPE DHT11 // sensor
+DHT dht(DHTPIN, DHTTYPE);
+////////////////////////////////
+
+void handleRoot() {
+  digitalWrite(led, 1);
+  server.send(200, "text/plain", "hello from esp8266!");
+  digitalWrite(led, 0);
+}
+
+void handleNotFound() {
+  digitalWrite(led, 1);
+  String message = "File Not Found\n\n";
+  message += "URI: ";
+  message += server.uri();
+  message += "\nMethod: ";
+  message += (server.method() == HTTP_GET) ? "GET" : "POST";
+  message += "\nArguments: ";
+  message += server.args();
+  message += "\n";
+  for (uint8_t i = 0; i < server.args(); i++) {
+    message += " " + server.argName(i) + ": " + server.arg(i) + "\n";
+  }
+  server.send(404, "text/plain", message);
+  digitalWrite(led, 0);
+}
+
+void setup(void) {
+
+  // sensor leds
+  pinMode(sa1, OUTPUT);
+  pinMode(sa2, OUTPUT);
+
+  // touch led
+  pinMode(TouchLed, OUTPUT);
+  pinMode(TouchSensor, INPUT);
+
+  // DHT11 sensor
+  dht.begin();
+
+  // webserver
+  pinMode(led, OUTPUT);
+  digitalWrite(led, 0);
+  Serial.begin(115200);
+  WiFi.mode(WIFI_STA);
+  WiFi.begin(ssid, password);
+  Serial.println("");
+
+  // Wait for connection
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+  }
+  Serial.println("");
+  Serial.print("Connected to ");
+  Serial.println(ssid);
+  Serial.print("IP address: ");
+  Serial.println(WiFi.localIP());
+
+  if (MDNS.begin("esp8266")) {
+    Serial.println("MDNS responder started");
+  }
+
+  server.on("/", handleRoot);
+
+  server.on("/inline", []() {
+    server.send(200, "text/plain", "this works as well");
+  });
+
+  server.on("/plant", readings);
+
+  server.onNotFound(handleNotFound);
+
+  server.begin();
+  Serial.println("HTTP server started");
+
+  // LCD 20x4
+  //lcd.init();
+  //lcd.begin(20, 4);
+  //lcd.backlight();
+}
+
+void loop(void) {
+  server.handleClient();
+  
+  delay(500);
+  readings();
+  sync_leds();
+
+  if (power == false) {
+    digitalWrite(sa1, LOW);
+    digitalWrite(sa2, LOW);
+  }
+    //async_leds();
+    //stdby(); 
+}
+
+//////////////////////
+// HELPER FUNCTIONS //
+//////////////////////
+
+// Soil Variables
 int value = 0;
 int treshold = 20;
 
-// leds
-const int sa1 = A0; // treshold
-const int sa2 = A1; // value
+// READINGS
+int readings() {
+  if (power == true) {
 
-// temp/humidity sensor
-#include "DHT.h"
-#define DHTPIN 6 // pinDATA
-#define DHTTYPE DHT11 // sensor
-DHT dht(DHTPIN, DHTTYPE);
+    // Hygrometer
+    value = analogRead(hygrometer);
+    value = constrain(value, 400, 1023);
+    value = map(value, 400, 1023, 100, 0);
 
-void setup() {
+    // Temperature + Humidity
+    float humid = dht.readHumidity();
+    // Read temperature as Celsius
+    float temp = dht.readTemperature() - 3;
 
-  Serial.begin(9600);
-  dht.begin();
+    // Serial Prints
+    if (!isnan(humid) && !isnan(temp)) {
+      Serial.write(12); // clear terminal
+      Serial.println("-----------------------");
+      Serial.print(" Air Humidity: ");
+      Serial.print(humid);
+      Serial.println(" %\t");
+      Serial.print(" Temperature: ");
+      Serial.print(temp);
+      Serial.println(" *C ");
+      Serial.print(" Soil: ");
+      Serial.print(value);
+      Serial.print("%");
 
-  pinMode(sa1, OUTPUT);
-  pinMode(sa2, OUTPUT);
+      if (value < treshold) {
+        Serial.println(" ** Needs watering! **");
+      } else {
+        Serial.println("");
+      }
+
+      Serial.println("-----------------------");
+
+      String mesg = "";
+      mesg += " Air Humidity: ";
+      mesg += humid;
+      mesg += " %\t";
+      mesg += ";\n";
+      mesg += " Temperature: ";
+      mesg += temp;
+      mesg += " *C ";
+      mesg += ";\n";
+      mesg += " Soil: ";
+      mesg += value;
+      mesg += "%";
+      mesg += ";\n";
+
+      server.send(200, "text/plain", mesg);
+
+      // LCD output
+      /*
+            if (!isnan(humid)) {
+              lcd.setCursor(0, 0);
+              lcd.print("Humidity : ");
+              lcd.print(humid);
+              lcd.print(" %");
+            }
+            if (!isnan(temp)) {
+              lcd.setCursor(0, 1);
+              lcd.print("Temp     : ");
+              lcd.print(temp);
+              lcd.print(" C");
+            }
+            if (!isnan(value)) {
+              lcd.setCursor(0, 2);
+              lcd.print("Soil     : ");
+              lcd.print(value);
+              lcd.print("%");
+              if (value  < treshold) {
+                lcd.setCursor(0, 3);
+                lcd.print("* Needs watering!! *");
+              } else {
+                lcd.setCursor(0, 3);
+                lcd.print("                    ");
+              }
+      */
+    }
+  }
 }
 
-void loop() {
-
-  // Temperature + Humidity
-  float h = dht.readHumidity();
-  // Read temperature as Celsius
-  float t = dht.readTemperature();
-
-  // Test
-  if (isnan(h) || isnan(t) ) {
-    Serial.println("Failed to read from DHT sensor!");
-    return;
-  }
-
-  // Hygrometer
-  value = analogRead(hygrometer);
-  value = constrain(value, 400, 1023);
-  value = map(value, 400, 1023, 100, 0);
-
-  // Prints
-  Serial.write(12); // clear terminal
-  Serial.println("-----------------------");
-  Serial.print(" Air Humidity: ");
-  Serial.print(h);
-  Serial.println(" %\t");
-  Serial.print(" Temperature: ");
-  Serial.print(t);
-  Serial.println(" *C ");
-  Serial.print(" Soil: ");
-  Serial.print(value);
-  Serial.print("%");
+// synced leds
+int sync_leds() {
   if (value < treshold) {
-    Serial.println(" ** Needs watering! **");
+    analogWrite(sa2, LOW);
+    analogWrite(sa1, LOW);
+    delay(250);
+    analogWrite(sa1, 55);
+    delay(250);
   } else {
-    Serial.println("");
+    analogWrite(sa2, 80);
+    analogWrite(sa1, LOW);
+    //delay(5000);
   }
-  Serial.println("-----------------------");
+}
 
-  // led monitor for soil
-  if (value < treshold) {
-    digitalWrite(sa2, LOW);
-    for (int i = 0; i < 10; i++) {
-      // amount of blinks
-      for (int j = 0; j < 2; j++) {
-        digitalWrite(sa1, HIGH);
-        delay(100);
-        digitalWrite(sa1, LOW);
-        delay(100);
-      }
-      delay(600);
+// Standby
+int stdby() {
+  currentState = digitalRead(TouchSensor);
+  if (currentState == HIGH && lastState == LOW) {
+    delay(5);
+    if (LedState == HIGH) {
+      digitalWrite(TouchLed, LOW);
+      LedState = LOW;
+      power = true;
+    } else {
+      digitalWrite(TouchLed, HIGH);
+      LedState = HIGH;
+      power = false;
     }
-  } else {
-    digitalWrite(sa1, LOW);
-    digitalWrite(sa2, HIGH);
-    delay(10000);
   }
+  lastState = currentState;
+}
 
+// Led monitor async
+int async_leds () {
+
+
+  if (power == true) {
+    unsigned long currentMillis = millis();
+
+    if (value < treshold) {
+      if (currentMillis - previousMillis >= interval) {
+        digitalWrite(sa2, LOW);
+        previousMillis = currentMillis;
+
+        // Led Switch
+        if (errorState == LOW) {
+          errorState = HIGH;
+        } else {
+          errorState = LOW;
+        }
+        digitalWrite(sa1, errorState);
+      }
+    }  else {
+      analogWrite(sa2, 5);
+      digitalWrite(sa1, LOW);
+    }
+  }
 }
