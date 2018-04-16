@@ -132,14 +132,16 @@ void loop(void) {
   readings();
   sync_leds();
   //async_leds();
-  //stdby();
+  stdby();
 
   if (power == false) {
-    digitalWrite(sa1, LOW);
-    digitalWrite(sa2, LOW);
+    analogWrite(sa1, 0);
+    analogWrite(sa2, 0);
+    analogWrite(TouchLed, 0);
+    lcd.noBacklight();
   }
 
-  delay(5000);
+  delay(1000);
 }
 
 //////////////////////
@@ -160,43 +162,41 @@ int temp;
 
 // READINGS
 int readings() {
-  if (power == true) {
 
-    // Hygrometer
-    value = analogRead(hygrometer);
-    value = constrain(value, 400, 1023);
-    value = map(value, 400, 1023, 100, 0);
+  // Hygrometer
+  value = analogRead(hygrometer);
+  value = constrain(value, 400, 1023);
+  value = map(value, 400, 1023, 100, 0);
 
-    // Humidity + Temperature
-    float a = dht.readHumidity();
-    // Read temperature as Celsius
-    float b = dht.readTemperature();
+  // Humidity + Temperature
+  float a = dht.readHumidity();
+  // Read temperature as Celsius
+  float b = dht.readTemperature();
 
-    previousHumidity = currentHumidity;
-    previousTemperature = currentTemperature;
+  previousHumidity = currentHumidity;
+  previousTemperature = currentTemperature;
 
-    // print outs
-    if (!isnan(a) || !isnan(b)) {
+  // print outs
+  if (!isnan(a) || !isnan(b)) {
 
-      currentHumidity = a;
-      currentTemperature = b;
+    currentHumidity = a;
+    currentTemperature = b;
 
-      humid = currentHumidity;
-      temp = currentTemperature;
+    humid = currentHumidity;
+    temp = currentTemperature;
 
-      serial_print();
-      lcd_out();
-      wifi_out();
+    serial_print();
+    lcd_out();
+    wifi_out();
 
-    } else {
+  } else {
 
-      humid = previousHumidity;
-      temp = previousTemperature;
+    humid = previousHumidity;
+    temp = previousTemperature;
 
-      serial_print();
-      lcd_out();
-      wifi_out();
-    }
+    serial_print();
+    lcd_out();
+    wifi_out();
   }
 }
 
@@ -277,7 +277,7 @@ int lcd_out() {
     lcd.setCursor(0, 2);
     lcd.print("Soil     : ");
     lcd.print(value);
-    lcd.print("%");
+    lcd.print(" %");
     if (value  < treshold) {
       lcd.setCursor(0, 3);
       lcd.print("* Needs watering!! *");
@@ -323,6 +323,7 @@ int stdby() {
       digitalWrite(TouchLed, LOW);
       LedState = LOW;
       power = true;
+      lcd.backlight();
     } else {
       digitalWrite(TouchLed, HIGH);
       LedState = HIGH;
