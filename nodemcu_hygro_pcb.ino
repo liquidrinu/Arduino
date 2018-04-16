@@ -76,7 +76,7 @@ void setup(void) {
 
   //lcd.begin(20, 4);
   //lcd.backlight();
-  delay(500);
+  //delay(500);
   
   // sensor leds
   pinMode(sa1, OUTPUT);
@@ -176,7 +176,6 @@ int readings() {
 
     currentHumidity = a;  // get a new reading
     currentTemperature = b;
-
 
     // print outs
     if (!isnan(currentHumidity) || !isnan(currentTemperature)) {  // compare them
@@ -327,4 +326,3 @@ int stdby() {
   }
   lastState = currentState;
 }
-
