@@ -7,7 +7,7 @@
 - 1x 10k resistor
 - 1x hygrometer
 - 1x DHT 11
-- 20x4 i2c LCD
+- 1x LCD (20x4 I2C)
 
 
 ### Quick Start
