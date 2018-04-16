@@ -4,9 +4,9 @@
 #include <ESP8266mDNS.h>
 
 // LCD
-//#include <Wire.h>
-//#include <LiquidCrystal_I2C.h>
-//LiquidCrystal_I2C lcd(0x3f);
+#include <Wire.h>
+#include <LiquidCrystal_I2C.h>
+LiquidCrystal_I2C lcd(0x3f,20,4);
 //0x3f
 
 // WIFI credentials
@@ -74,10 +74,10 @@ void handleNotFound() {
 
 void setup(void) {
 
-  //lcd.begin(20, 4);
-  //lcd.backlight();
+  lcd.begin();
+  lcd.backlight();
   //delay(500);
-  
+
   // sensor leds
   pinMode(sa1, OUTPUT);
   pinMode(sa2, OUTPUT);
@@ -172,24 +172,29 @@ int readings() {
     // Read temperature as Celsius
     float b = dht.readTemperature() - 3;
 
-    previousHumidity = currentHumidity;  // store what was read last time
+    previousHumidity = currentHumidity;
     previousTemperature = currentTemperature;
 
-    currentHumidity = a;  // get a new reading
-    currentTemperature = b;
-
     // print outs
-    if (!isnan(currentHumidity) || !isnan(currentTemperature)) {  // compare them
+    if (!isnan(a) || !isnan(b)) {
+
+      currentHumidity = a;
+      currentTemperature = b;
+
       humid = currentHumidity;
       temp = currentTemperature;
+
       serial_print();
-      //lcd_out();
+      lcd_out();
       wifi_out();
+
     } else {
+
       humid = previousHumidity;
       temp = previousTemperature;
+
       serial_print();
-      //lcd_out();
+      lcd_out();
       wifi_out();
     }
   }
@@ -254,8 +259,8 @@ int sync_leds() {
 }
 
 // LCD output
-/*
-  int lcd_out() {
+
+int lcd_out() {
 
   if (!isnan(humid)) {
     lcd.setCursor(0, 0);
@@ -282,7 +287,7 @@ int sync_leds() {
       lcd.print("                    ");
     }
   }
-*/
+}
 
 // Led monitor async
 int async_leds () {
