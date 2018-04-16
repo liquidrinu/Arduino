@@ -19,7 +19,8 @@ Download LCD library from here : https://github.com/fdebrabander/Arduino-LiquidC
 
 ### Quick Start
 
-1.) Solder/connect *VIN* (3.3V + pin on pcb)-> LCD *VCC* on the I2C module. The pcb states 3.3V, but it's 5V from the USB
+1.) Solder/connect *VIN* ('Power +' pin on pcb) to LCD *VCC* on the I2C module. 
+###### The pcb states 3.3V, but it's 5V from the USB
 
 2.) SDA and SCL wires need to be swapped around
 
