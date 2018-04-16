@@ -5,9 +5,9 @@
 
 // LCD
 //#include <Wire.h>
-//#include <LCD.h>
 //#include <LiquidCrystal_I2C.h>
-//LiquidCrystal_I2C lcd(0x3F, 20, 4);
+//LiquidCrystal_I2C lcd(0x3f);
+//0x3f
 
 // WIFI credentials
 const char* ssid = "secret";
@@ -32,11 +32,11 @@ const int hygrometer = A0;
 // leds
 volatile int q = 0; //initializing a integer for incrementing and decrementing duty ratio.
 const int sa1 = 2; // treshold
-const int sa2 = 0; // value
+const int sa2 = 13; // value
 
 // touch sensor
 int TouchSensor = 14;
-int TouchLed = 13;
+int TouchLed = 0;
 boolean currentState = LOW;
 boolean lastState = LOW;
 boolean LedState = LOW;
@@ -46,6 +46,7 @@ boolean LedState = LOW;
 #define DHTPIN 12 // pinDATA
 #define DHTTYPE DHT11 // sensor
 DHT dht(DHTPIN, DHTTYPE);
+
 ////////////////////////////////
 
 void handleRoot() {
@@ -73,6 +74,10 @@ void handleNotFound() {
 
 void setup(void) {
 
+  //lcd.begin(20, 4);
+  //lcd.backlight();
+  delay(500);
+  
   // sensor leds
   pinMode(sa1, OUTPUT);
   pinMode(sa2, OUTPUT);
@@ -120,16 +125,11 @@ void setup(void) {
   server.begin();
   Serial.println("HTTP server started");
 
-  // LCD 20x4
-  //lcd.init();
-  //lcd.begin(20, 4);
-  //lcd.backlight();
 }
 
 void loop(void) {
   server.handleClient();
-  
-  delay(500);
+
   readings();
   sync_leds();
 
@@ -137,8 +137,9 @@ void loop(void) {
     digitalWrite(sa1, LOW);
     digitalWrite(sa2, LOW);
   }
-    //async_leds();
-    //stdby(); 
+  //async_leds();
+  //stdby();
+  delay(5000);
 }
 
 //////////////////////
@@ -149,6 +150,13 @@ void loop(void) {
 int value = 0;
 int treshold = 20;
 
+int currentHumidity;  // global variables are retained on each iteration of loop()
+int currentTemperature;
+int previousHumidity;
+int previousTemperature;
+int humid;
+int temp;
+
 // READINGS
 int readings() {
   if (power == true) {
@@ -158,78 +166,76 @@ int readings() {
     value = constrain(value, 400, 1023);
     value = map(value, 400, 1023, 100, 0);
 
-    // Temperature + Humidity
-    float humid = dht.readHumidity();
+    // Humidity + Temperature
+    float a = dht.readHumidity();
     // Read temperature as Celsius
-    float temp = dht.readTemperature() - 3;
+    float b = dht.readTemperature() - 3;
 
-    // Serial Prints
-    if (!isnan(humid) && !isnan(temp)) {
-      Serial.write(12); // clear terminal
-      Serial.println("-----------------------");
-      Serial.print(" Air Humidity: ");
-      Serial.print(humid);
-      Serial.println(" %\t");
-      Serial.print(" Temperature: ");
-      Serial.print(temp);
-      Serial.println(" *C ");
-      Serial.print(" Soil: ");
-      Serial.print(value);
-      Serial.print("%");
+    previousHumidity = currentHumidity;  // store what was read last time
+    previousTemperature = currentTemperature;
 
-      if (value < treshold) {
-        Serial.println(" ** Needs watering! **");
-      } else {
-        Serial.println("");
-      }
+    currentHumidity = a;  // get a new reading
+    currentTemperature = b;
 
-      Serial.println("-----------------------");
 
-      String mesg = "";
-      mesg += " Air Humidity: ";
-      mesg += humid;
-      mesg += " %\t";
-      mesg += ";\n";
-      mesg += " Temperature: ";
-      mesg += temp;
-      mesg += " *C ";
-      mesg += ";\n";
-      mesg += " Soil: ";
-      mesg += value;
-      mesg += "%";
-      mesg += ";\n";
-
-      server.send(200, "text/plain", mesg);
-
-      // LCD output
-      /*
-            if (!isnan(humid)) {
-              lcd.setCursor(0, 0);
-              lcd.print("Humidity : ");
-              lcd.print(humid);
-              lcd.print(" %");
-            }
-            if (!isnan(temp)) {
-              lcd.setCursor(0, 1);
-              lcd.print("Temp     : ");
-              lcd.print(temp);
-              lcd.print(" C");
-            }
-            if (!isnan(value)) {
-              lcd.setCursor(0, 2);
-              lcd.print("Soil     : ");
-              lcd.print(value);
-              lcd.print("%");
-              if (value  < treshold) {
-                lcd.setCursor(0, 3);
-                lcd.print("* Needs watering!! *");
-              } else {
-                lcd.setCursor(0, 3);
-                lcd.print("                    ");
-              }
-      */
+    // print outs
+    if (!isnan(currentHumidity) || !isnan(currentTemperature)) {  // compare them
+      humid = currentHumidity;
+      temp = currentTemperature;
+      serial_print();
+      //lcd_out();
+      wifi_out();
+    } else {
+      humid = previousHumidity;
+      temp = previousTemperature;
+      serial_print();
+      //lcd_out();
+      wifi_out();
     }
   }
+}
+
+// Serial OUT
+int serial_print() {
+
+  Serial.write(12); // clear terminal
+  Serial.println("-----------------------");
+  Serial.print(" Air Humidity: ");
+  Serial.print(humid);
+  Serial.println(" %\t");
+  Serial.print(" Temperature: ");
+  Serial.print(temp);
+  Serial.println(" *C ");
+  Serial.print(" Soil: ");
+  Serial.print(value);
+  Serial.print("%");
+
+  if (value < treshold) {
+    Serial.println(" ** Needs watering! **");
+  } else {
+    Serial.println("");
+  }
+
+  Serial.println("-----------------------");
+}
+
+//WIFI OUT
+int wifi_out() {
+  String mesg = "";
+  mesg += " Air Humidity: ";
+  mesg += humid;
+  mesg += " %\t";
+  mesg += ";\n";
+  mesg += " Temperature: ";
+  mesg += temp;
+  mesg += " *C ";
+  mesg += ";\n";
+  mesg += " Soil: ";
+  mesg += value;
+  mesg += "%";
+  mesg += ";\n";
+
+  server.send(200, "text/plain", mesg);
 }
 
 // synced leds
@@ -238,36 +244,48 @@ int sync_leds() {
     analogWrite(sa2, LOW);
     analogWrite(sa1, LOW);
     delay(250);
-    analogWrite(sa1, 55);
+    analogWrite(sa1, 55); // treshold led
     delay(250);
   } else {
-    analogWrite(sa2, 80);
+    analogWrite(sa2, 55); // reading led
     analogWrite(sa1, LOW);
     //delay(5000);
   }
 }
 
-// Standby
-int stdby() {
-  currentState = digitalRead(TouchSensor);
-  if (currentState == HIGH && lastState == LOW) {
-    delay(5);
-    if (LedState == HIGH) {
-      digitalWrite(TouchLed, LOW);
-      LedState = LOW;
-      power = true;
+// LCD output
+/*
+  int lcd_out() {
+
+  if (!isnan(humid)) {
+    lcd.setCursor(0, 0);
+    lcd.print("Humidity : ");
+    lcd.print(humid);
+    lcd.print(" %");
+  }
+  if (!isnan(temp)) {
+    lcd.setCursor(0, 1);
+    lcd.print("Temp     : ");
+    lcd.print(temp);
+    lcd.print(" C");
+  }
+  if (!isnan(value)) {
+    lcd.setCursor(0, 2);
+    lcd.print("Soil     : ");
+    lcd.print(value);
+    lcd.print("%");
+    if (value  < treshold) {
+      lcd.setCursor(0, 3);
+      lcd.print("* Needs watering!! *");
     } else {
-      digitalWrite(TouchLed, HIGH);
-      LedState = HIGH;
-      power = false;
+      lcd.setCursor(0, 3);
+      lcd.print("                    ");
     }
   }
-  lastState = currentState;
-}
+  } */
 
 // Led monitor async
 int async_leds () {
-
 
   if (power == true) {
     unsigned long currentMillis = millis();
@@ -291,3 +309,22 @@ int async_leds () {
     }
   }
 }
+
+// Standby
+int stdby() {
+  currentState = digitalRead(TouchSensor);
+  if (currentState == HIGH && lastState == LOW) {
+    delay(5);
+    if (LedState == HIGH) {
+      digitalWrite(TouchLed, LOW);
+      LedState = LOW;
+      power = true;
+    } else {
+      digitalWrite(TouchLed, HIGH);
+      LedState = HIGH;
+      power = false;
+    }
+  }
+  lastState = currentState;
+}
+
