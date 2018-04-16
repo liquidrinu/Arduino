@@ -150,7 +150,8 @@ void loop(void) {
 int value = 0;
 int treshold = 20;
 
-int currentHumidity;  // global variables are retained on each iteration of loop()
+// memoization for faulty readings
+int currentHumidity;
 int currentTemperature;
 int previousHumidity;
 int previousTemperature;
