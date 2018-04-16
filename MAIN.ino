@@ -11,11 +11,9 @@ ESP8266WebServer server(80);
 const int led = 22;
 
 // LCD
-const char* lcd_address = "0x3f";
-
 #include <Wire.h>
 #include <LiquidCrystal_I2C.h>
-LiquidCrystal_I2C lcd(lcd_address, 20, 4);
+LiquidCrystal_I2C lcd(0x3f, 20, 4); // (memory address, columns, rows);
 
 ////////////////////////////////
 // Sensor Logic & Pins
