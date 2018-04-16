@@ -282,7 +282,7 @@ int sync_leds() {
       lcd.print("                    ");
     }
   }
-  } */
+*/
 
 // Led monitor async
 int async_leds () {
