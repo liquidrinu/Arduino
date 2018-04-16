@@ -1,3 +1,6 @@
+# Plant-o-meter V1
+
+<img src="https://github.com/liquidrinu/Arduino/blob/master/plantometer_pcb.png"  width="400">
 
 ### Required:
 - NodeMcu lolin devkit V3
@@ -22,8 +25,12 @@ Download LCD library from here : https://github.com/fdebrabander/Arduino-LiquidC
 
 3.) Enter your own SSID and PASSWORD in the "MAIN.ino" file
 
-4.) upload the code..
-* hold flash on the NodeMcu if upload gives error *
+4.) upload the code from IDE
+```
+- Board NodeMCU 1.0 (ESP-12E module)
+- uploadspeed 115200 baud
+```
+* hold flash on the NodeMcu if upload gives error
 
 5.) Readings can be found on http://192.168.1.x/plant (where 'x' is the ip assigned by your network)
 
