@@ -12,7 +12,7 @@
 
 ### Quick Start
 
-1.) custom PCB needs VIN to VCC on LCD I2C module (5v).
+1.) custom PCB VIN -> LCD VCC on I2C module (5v). 3.3v inadequate
 
 2.) SDA -> SCL on Pcb and SCL -> SDA (SDA and SCL wires basically need to be swapped)
 
@@ -27,4 +27,4 @@ Download LCD library from here : https://github.com/fdebrabander/Arduino-LiquidC
 
 #### Main code file is MAIN.ino
 
-lcd currently unstable and messes up readings here and there from DHT11, solved with software hack, but keep this in mind that reading are not absolute, but doable.
+lcd currently unstable and readings from the DHT11 can be 1 minute off, solved with software hack to keep throughput (memoization), but do keep this in mind.
