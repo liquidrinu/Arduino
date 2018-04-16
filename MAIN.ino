@@ -3,18 +3,19 @@
 #include <ESP8266WebServer.h>
 #include <ESP8266mDNS.h>
 
-// LCD
-#include <Wire.h>
-#include <LiquidCrystal_I2C.h>
-LiquidCrystal_I2C lcd(0x3f,20,4);
-//0x3f
-
 // WIFI credentials
 const char* ssid = "secret";
 const char* password = "secret";
 
 ESP8266WebServer server(80);
 const int led = 22;
+
+// LCD
+const char* lcd_address = "0x3f";
+
+#include <Wire.h>
+#include <LiquidCrystal_I2C.h>
+LiquidCrystal_I2C lcd(lcd_address, 20, 4);
 
 ////////////////////////////////
 // Sensor Logic & Pins
@@ -76,7 +77,6 @@ void setup(void) {
 
   lcd.begin();
   lcd.backlight();
-  //delay(500);
 
   // sensor leds
   pinMode(sa1, OUTPUT);
@@ -128,17 +128,19 @@ void setup(void) {
 }
 
 void loop(void) {
+
   server.handleClient();
 
   readings();
   sync_leds();
+  //async_leds();
+  //stdby();
 
   if (power == false) {
     digitalWrite(sa1, LOW);
     digitalWrite(sa2, LOW);
   }
-  //async_leds();
-  //stdby();
+
   delay(5000);
 }
 
@@ -170,7 +172,7 @@ int readings() {
     // Humidity + Temperature
     float a = dht.readHumidity();
     // Read temperature as Celsius
-    float b = dht.readTemperature() - 3;
+    float b = dht.readTemperature();
 
     previousHumidity = currentHumidity;
     previousTemperature = currentTemperature;
@@ -254,7 +256,6 @@ int sync_leds() {
   } else {
     analogWrite(sa2, 55); // reading led
     analogWrite(sa1, LOW);
-    //delay(5000);
   }
 }
 
