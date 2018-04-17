@@ -302,6 +302,7 @@ int lcd_out() {
 }
 
 // Led monitor async
+
 int async_leds () {
 
   if (power == true) {
@@ -329,6 +330,7 @@ int async_leds () {
 
 // Standby
 int stdby() {
+  
   currentState = digitalRead(TouchSensor);
   if (currentState == HIGH && lastState == LOW) {
     delay(5);
@@ -348,20 +350,14 @@ int stdby() {
 
 // Smoothing function (soil)
 int smoothing() {
-  // subtract the last reading:
-  total = total - readings[readIndex];
-  // read from the sensor:
-  readings[readIndex] = value;
-  // add the reading to the total:
-  total = total + readings[readIndex];
-  // advance to the next position in the array:
-  readIndex = readIndex + 1;
 
-  // if we're at the end of the array...
+  total = total - readings[readIndex];   // subtract the last reading
+  readings[readIndex] = value;  // read from the soil sensor
+  total = total + readings[readIndex];  // add the reading to the total
+  readIndex = readIndex + 1; // advance to the next position in the array
+
   if (readIndex >= numReadings) {
-    // ...wrap around to the beginning:
-    readIndex = 0;
+    readIndex = 0; // restart array
   }
-  // calculate the average:
   soil_avg = total / numReadings;
 }
