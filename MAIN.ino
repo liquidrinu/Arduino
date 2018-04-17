@@ -40,6 +40,14 @@ boolean currentState = LOW;
 boolean lastState = LOW;
 boolean LedState = LOW;
 
+// smoothing variables
+const int numReadings = 20;
+int readings[numReadings];      // the readings from the analog input
+int readIndex = 0;              // the index of the current reading
+int total = 0;                  // the running total
+int average = 0;                // the average
+int soil_avg;
+
 #include <Adafruit_Sensor.h>
 #include "DHT.h"
 #define DHTPIN 12 // pinDATA
@@ -116,20 +124,24 @@ void setup(void) {
     server.send(200, "text/plain", "this works as well");
   });
 
-  server.on("/plant", readings);
+  server.on("/plant", readings_total);
 
   server.onNotFound(handleNotFound);
 
   server.begin();
   Serial.println("HTTP server started");
 
+  // smoothing init
+  for (int thisReading = 0; thisReading < numReadings; thisReading++) {
+    readings[thisReading] = 0;
+  }
 }
 
 void loop(void) {
 
   server.handleClient();
 
-  readings();
+  readings_total();
   sync_leds();
   //async_leds();
   stdby();
@@ -161,7 +173,7 @@ int humid;
 int temp;
 
 // READINGS
-int readings() {
+int readings_total() {
 
   // Hygrometer
   value = analogRead(hygrometer);
@@ -184,7 +196,8 @@ int readings() {
 
     humid = currentHumidity;
     temp = currentTemperature;
-
+    
+    smoothing();
     serial_print();
     lcd_out();
     wifi_out();
@@ -212,7 +225,7 @@ int serial_print() {
   Serial.print(temp);
   Serial.println(" *C ");
   Serial.print(" Soil: ");
-  Serial.print(value);
+  Serial.print(soil_avg);
   Serial.print("%");
 
   if (value < treshold) {
@@ -236,7 +249,7 @@ int wifi_out() {
   mesg += " *C ";
   mesg += ";\n";
   mesg += " Soil: ";
-  mesg += value;
+  mesg += soil_avg;
   mesg += "%";
   mesg += ";\n";
 
@@ -276,7 +289,7 @@ int lcd_out() {
   if (!isnan(value)) {
     lcd.setCursor(0, 2);
     lcd.print("Soil     : ");
-    lcd.print(value);
+    lcd.print(soil_avg);
     lcd.print(" %");
     if (value  < treshold) {
       lcd.setCursor(0, 3);
@@ -331,4 +344,24 @@ int stdby() {
     }
   }
   lastState = currentState;
+}
+
+// Smoothing function (soil)
+int smoothing() {
+  // subtract the last reading:
+  total = total - readings[readIndex];
+  // read from the sensor:
+  readings[readIndex] = value;
+  // add the reading to the total:
+  total = total + readings[readIndex];
+  // advance to the next position in the array:
+  readIndex = readIndex + 1;
+
+  // if we're at the end of the array...
+  if (readIndex >= numReadings) {
+    // ...wrap around to the beginning:
+    readIndex = 0;
+  }
+  // calculate the average:
+  soil_avg = total / numReadings;
 }
