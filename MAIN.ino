@@ -36,6 +36,7 @@ const int sa2 = 13; // value
 // capacative touch sensor
 int TouchSensor = 14;
 int TouchLed = 0;
+
 boolean currentState = LOW;
 boolean lastState = LOW;
 boolean LedState = LOW;
@@ -260,7 +261,7 @@ int wifi_out() {
 // synced leds
 int sync_leds() {
 
-  if (soil_avg < treshold) {
+  if (soil_avg < treshold && power == true) {
     analogWrite(sa2, LOW);
     analogWrite(sa1, 55); // treshold led
     delay(100);
