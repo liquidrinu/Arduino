@@ -33,7 +33,7 @@ volatile int q = 0; //initializing a integer for incrementing and decrementing d
 const int sa1 = 2; // treshold
 const int sa2 = 13; // value
 
-// touch sensor
+// capacative touch sensor
 int TouchSensor = 14;
 int TouchLed = 0;
 boolean currentState = LOW;
@@ -41,7 +41,7 @@ boolean lastState = LOW;
 boolean LedState = LOW;
 
 // smoothing variables
-const int numReadings = 20;
+const int numReadings = 20;     // amount of values used to average
 int readings[numReadings];      // the readings from the analog input
 int readIndex = 0;              // the index of the current reading
 int total = 0;                  // the running total
@@ -143,11 +143,11 @@ void loop(void) {
 
   readings_total();
   sync_leds();
-  //async_leds();
   stdby();
+  //async_leds();
 
   if (power == false) {
-    analogWrite(sa1, 0);
+    digitalWrite(sa1, LOW);
     analogWrite(sa2, 0);
     analogWrite(TouchLed, 0);
     lcd.noBacklight();
@@ -160,11 +160,11 @@ void loop(void) {
 // HELPER FUNCTIONS //
 //////////////////////
 
-// Soil Variables
+// soil Variables
 int value = 0;
 int treshold = 20;
 
-// memoization for faulty readings
+// memoization for faulty readings (dht11)
 int currentHumidity;
 int currentTemperature;
 int previousHumidity;
@@ -196,7 +196,7 @@ int readings_total() {
 
     humid = currentHumidity;
     temp = currentTemperature;
-    
+
     smoothing();
     serial_print();
     lcd_out();
@@ -239,6 +239,7 @@ int serial_print() {
 
 //WIFI OUT
 int wifi_out() {
+
   String mesg = "";
   mesg += " Air Humidity: ";
   mesg += humid;
@@ -258,20 +259,21 @@ int wifi_out() {
 
 // synced leds
 int sync_leds() {
-  if (value < treshold) {
+
+  if (soil_avg < treshold) {
     analogWrite(sa2, LOW);
-    analogWrite(sa1, LOW);
-    delay(250);
     analogWrite(sa1, 55); // treshold led
-    delay(250);
+    delay(100);
+    analogWrite(sa1, 0);
+    delay(100);
   } else {
     analogWrite(sa2, 55); // reading led
     analogWrite(sa1, LOW);
   }
+
 }
 
 // LCD output
-
 int lcd_out() {
 
   if (!isnan(humid)) {
@@ -291,7 +293,7 @@ int lcd_out() {
     lcd.print("Soil     : ");
     lcd.print(soil_avg);
     lcd.print(" %");
-    if (value  < treshold) {
+    if (soil_avg  < treshold) {
       lcd.setCursor(0, 3);
       lcd.print("* Needs watering!! *");
     } else {
@@ -302,13 +304,12 @@ int lcd_out() {
 }
 
 // Led monitor async
-
 int async_leds () {
 
   if (power == true) {
     unsigned long currentMillis = millis();
 
-    if (value < treshold) {
+    if (soil_avg < treshold) {
       if (currentMillis - previousMillis >= interval) {
         digitalWrite(sa2, LOW);
         previousMillis = currentMillis;
@@ -330,7 +331,7 @@ int async_leds () {
 
 // Standby
 int stdby() {
-  
+
   currentState = digitalRead(TouchSensor);
   if (currentState == HIGH && lastState == LOW) {
     delay(5);
