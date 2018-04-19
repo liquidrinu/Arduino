@@ -242,17 +242,17 @@ int serial_print() {
 int wifi_out() {
 
   String mesg = "";
-  mesg += " Air Humidity: ";
+  mesg += " Air Humidity : '";
   mesg += humid;
-  mesg += " %\t";
+  mesg += "' %";
   mesg += ";\n";
-  mesg += " Temperature: ";
+  mesg += " Temperature' : '";
   mesg += temp;
-  mesg += " *C ";
+  mesg += "' C";
   mesg += ";\n";
-  mesg += " Soil: ";
+  mesg += " Soil         : '";
   mesg += soil_avg;
-  mesg += "%";
+  mesg += "' %";
   mesg += ";\n";
 
   server.send(200, "text/plain", mesg);
