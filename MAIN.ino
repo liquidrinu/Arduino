@@ -11,7 +11,7 @@ ESP8266WebServer server(80);
 const int led = 22;
 
 // LCD
-#include <Wire.h>
+//#include <Wire.h> (not needed with current library)
 #include <LiquidCrystal_I2C.h>
 LiquidCrystal_I2C lcd(0x3f, 20, 4); // (memory address, columns, rows);
 
