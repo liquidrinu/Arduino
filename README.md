@@ -32,7 +32,7 @@ Download LCD library from here : https://github.com/fdebrabander/Arduino-LiquidC
 - uploadspeed 115200 baud
 ```
 * hold flash on the NodeMcu if upload gives error
-* different boards might require ESP-12 library (0.9) and/or different baudrate
+* different boards might require ESP-12 library (0.9) and/or different baudrate (9600)
 
 5.) Readings can be found on http://192.168.1.x/plant (where 'x' is the ip assigned by your network)
 
