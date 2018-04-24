@@ -14,7 +14,7 @@ ESP8266WebServer server(80);
 LiquidCrystal_I2C lcd(0x3f, 20, 4); // (memory address, columns, rows);
 
 ////////////////////////////////
-// Sensor Logic & Pins
+// C O N F I G U R A T I O N  //
 ////////////////////////////////
 
 int power = true;
@@ -35,14 +35,13 @@ const int sa3 = 0; // [standby]
 
 // capacative touch sensor
 int TouchSensor = 14;
-
 boolean currentState = LOW;
 boolean lastState = LOW;
 boolean LedState = LOW;
 
 // Smoothing variables
-const int numReadings = 10;     // increase to smooth more, but will slow down readings 
-                                
+const int numReadings = 10;     // increase to smooth more, but will slow down readings
+
 int readings[numReadings];      // the readings from the analog input
 int readIndex = 0;              // the index of the current reading
 int total = 0;                  // the running total
