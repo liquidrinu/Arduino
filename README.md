@@ -19,6 +19,7 @@ Download LCD library from here : https://github.com/fdebrabander/Arduino-LiquidC
 Current setup corrodes the soil meter real fast.
 
 The way to fix this is to wire pin **D8** to the **Vcc** of the soilmeter module, then upload **D8_hack.ino** on to the nodemcu.
+
 *tip: take off one end of a female-female dupont cable solder one end to the pin on the board, and plug the other*
 
 This code also changes architecture from 'delay()' based to 'millis()' based for better performance.
