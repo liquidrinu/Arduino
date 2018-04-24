@@ -41,7 +41,8 @@ boolean lastState = LOW;
 boolean LedState = LOW;
 
 // Smoothing variables
-const int numReadings = 10;     // amount of values used to average
+const int numReadings = 10;     // increase to smooth more, but will slow down readings 
+                                
 int readings[numReadings];      // the readings from the analog input
 int readIndex = 0;              // the index of the current reading
 int total = 0;                  // the running total
