@@ -9,10 +9,6 @@ const char* password = "secret";
 
 ESP8266WebServer server(80);
 
-// LCD
-#include <LiquidCrystal_I2C.h>
-LiquidCrystal_I2C lcd(0x3f, 20, 4); // (memory address, columns, rows);
-
 ////////////////////////////////
 // C O N F I G U R A T I O N  //
 ////////////////////////////////
@@ -32,6 +28,10 @@ const int brightness = 255; // 0 = off, 255 = fully lit
 const int sa1 = 2; // [treshold]
 const int sa2 = 13; // [value]
 const int sa3 = 0; // [standby]
+
+// LCD
+#include <LiquidCrystal_I2C.h>
+LiquidCrystal_I2C lcd(0x3f, 20, 4); // (memory address, columns, rows);
 
 // capacative touch sensor
 int TouchSensor = 14;
@@ -124,10 +124,6 @@ void setup(void) {
 
   server.on("/", handleRoot);
 
-  server.on("/inline", []() {
-    server.send(200, "text/plain", "this works as well");
-  });
-
   server.on("/plant", readings_total);
 
   server.onNotFound(handleNotFound);
@@ -151,17 +147,12 @@ void loop(void) {
     readings_total();
   }
 
+  // active modules
+  serial_print();
+  sync_leds();
+  lcd_out();
+  wifi_out();
   stdby();
-
-  if (power == false) {
-    digitalWrite(sa1, LOW);
-    digitalWrite(sa2, LOW);
-    digitalWrite(sa3, LOW);
-    lcd.noBacklight();
-  } else {
-    sync_leds();
-    lcd.backlight();
-  }
 
 }
 
@@ -206,7 +197,6 @@ int readings_total() {
   previousHumidity = currentHumidity;
   previousTemperature = currentTemperature;
 
-  // print outs
   if (!isnan(a) || !isnan(b)) {
 
     currentHumidity = a;
@@ -215,18 +205,11 @@ int readings_total() {
     humid = currentHumidity;
     temp = currentTemperature;
 
-    serial_print();
-    lcd_out();
-    wifi_out();
-
   } else {
 
     humid = previousHumidity;
     temp = previousTemperature;
 
-    serial_print();
-    lcd_out();
-    wifi_out();
   }
 }
 
@@ -276,16 +259,21 @@ int wifi_out() {
 
 // synced leds
 int sync_leds() {
+  
+  if (power == true) {
+    
+    if (soil_avg < treshold) {
+      analogWrite(sa2, 0);
+      analogWrite(sa3, 0);
 
-  if (soil_avg < treshold && power == true) {
-    analogWrite(sa2, 0);
-    analogWrite(sa1, brightness); // treshold led
-    delay(100);
-    analogWrite(sa1, 0);
-    delay(100);
-  } else {
-    analogWrite(sa2, brightness); // reading led
-    analogWrite(sa1, LOW);
+      analogWrite(sa1, brightness); // treshold led
+      delay(100);
+      analogWrite(sa1, 0);
+      delay(100);
+    } else {
+      analogWrite(sa2, brightness);
+      analogWrite(sa1, LOW);
+    }
   }
 
 }
@@ -327,11 +315,21 @@ int stdby() {
   if (currentState == HIGH && lastState == LOW) {
     delay(5);
     if (LedState == HIGH) {
+
       LedState = LOW;
       power = true;
+      lcd.backlight();
+
     } else {
       LedState = HIGH;
       power = false;
+
+      // turn off leds and screen
+      digitalWrite(sa1, LOW);
+      digitalWrite(sa2, LOW);
+      digitalWrite(sa3, LOW);
+      lcd.noBacklight();
+
     }
   }
   lastState = currentState;
