@@ -22,7 +22,7 @@ The way to fix this is to wire pin **D8** to the **Vcc** of the soilmeter module
 
 *tip: take off one end of a female-female dupont cable solder one end to the pin on the board, and plug the other*
 
-This code also changes architecture from 'delay()' based to 'millis()' based for better performance.
+This code is also an upgrade to the "MAIN.ino" file
 
 
 ### Quick Start
