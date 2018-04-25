@@ -5,7 +5,7 @@
 
 // WIFI credentials
 const char* ssid = "secret";
-const char* password = "secret";
+const char* password = "secret;
 
 ESP8266WebServer server(80);
 
@@ -21,9 +21,11 @@ const long interval = 15000;
 const int inBetweenies = 100;   // delays between each read
 const int numReadings = 15;     // Increase to smooth more, but will slow down readings
 
-//    The interval between each read is 500ms, so 15 x 500 = 7500ms.
+//    The interval between each read is 100ms, so 15 x 100 = 1500ms.
 //    This needs to be lower than "interval" (15000ms + 1000ms), or
-//    the readings will be unstable.
+//    the readings will be unstable. The added 1000ms is to give a bit 
+//    of leeway to the soilmeter's power input to suppres voltage spikes
+//    on the first few reads
 
 // * Serial print will notify if the limits are set wrong!
 
@@ -157,9 +159,6 @@ void setup(void) {
     Serial.println("");
   }
 
-  // inital read;
-  // soil_readings();
-  // serial_print();
 }
 
 void loop(void) {
@@ -191,8 +190,6 @@ void loop(void) {
 //////////////////////
 // HELPER FUNCTIONS //
 //////////////////////
-//final static int DELAY = 1000;
-//int nextTimer, counter;
 
 int value; // soil data
 
