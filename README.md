@@ -22,8 +22,14 @@ The way to fix this is to wire pin **D8** to the **Vcc** of the soilmeter module
 
 ** cut one end of a female dupont cable, then solder one end to the pin on the board, and plug the other onto the header**
 
-This code is also an upgrade to the "MAIN.ino" file
+Other improvement:
 
+- async (except during actual read, which gets full priority);
+- more efficient http request
+- more responsive capacitive touch switch (stdby)
+- more power efficient
+- heavily decreased corrosion
+- easier/more config
 
 ### Quick Start
 
