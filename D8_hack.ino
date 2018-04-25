@@ -5,7 +5,7 @@
 
 // WIFI credentials
 const char* ssid = "secret";
-const char* password = "secret;
+const char* password = "secret";
 
 ESP8266WebServer server(80);
 
@@ -18,6 +18,7 @@ int power = true;
 // soil readings async
 unsigned long previousMillis = 0;
 const long interval = 15000;
+
 const int inBetweenies = 100;   // delays between each read
 const int numReadings = 15;     // Increase to smooth more, but will slow down readings
 
@@ -187,9 +188,9 @@ void loop(void) {
 
 }
 
-//////////////////////
-// HELPER FUNCTIONS //
-//////////////////////
+////////////////////////
+// F U N C T I O N S  //
+////////////////////////
 
 int value; // soil data
 
@@ -399,7 +400,7 @@ int smoothing() {
   readIndex = readIndex + 1; // advance to the next position in the array
 
   if (readIndex >= numReadings) {
-    readIndex = 0; // restart array
+    readIndex = 0; // re-initialize array
   }
   soil_avg = total / numReadings;
 }
@@ -424,8 +425,8 @@ int soil_phase_print() {
 int soil_error() {
   if ((numReadings * inBetweenies) + 1000 > interval) {
     Serial.println("");
-    Serial.println("ERROR: Your timing on 'interval' is ");
-    Serial.println("too low for the amount of 'numReadings'");
+    Serial.print("ERROR: Your timing on 'interval' is too low to");
+    Serial.println("do the amount of 'numReadings' you want");
     Serial.println("");
   }
 }
