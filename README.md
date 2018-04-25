@@ -31,7 +31,7 @@ Improvements:
 - decreased corrosion
 - easier/more config
 
-### Quick Start
+## Quick Start
 
 ###### Main code file is MAIN.ino
 
