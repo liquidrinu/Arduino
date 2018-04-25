@@ -24,7 +24,7 @@ The way to fix this is to wire pin **D8** to the **Vcc** of the soilmeter module
 
 Improvements:
 
-- async (except during actual read, which gets full priority);
+- async (except during actual read phase of the soil, which gets full priority);
 - more efficient http request
 - more responsive capacitive touch switch (stdby)
 - more power efficient
