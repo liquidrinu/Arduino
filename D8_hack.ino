@@ -15,9 +15,13 @@ ESP8266WebServer server(80);
 
 int power = true;
 
-// async readings
+// soil readings async
 unsigned long previousMillis = 0;
-const long interval = 2000;
+const long interval = 15000;
+
+// dht readings async
+unsigned long previousMillis2 = 0;
+const long interval2 = 2000;
 
 // soil
 int treshold = 20; // 'dry'
@@ -43,7 +47,7 @@ boolean lastState = LOW;
 boolean LedState = LOW;
 
 // Smoothing variables
-const int numReadings = 15;     // increase to smooth more, but will slow down readings
+const int numReadings = 10;     // increase to smooth more, but will slow down readings
 int readings[numReadings];      // the readings from the analog input
 int readIndex = 0;              // the index of the current reading
 int total = 0;                  // the running total
@@ -144,11 +148,17 @@ void loop(void) {
 
   server.handleClient();
   unsigned long currentMillis = millis();
+  unsigned long currentMillis2 = millis();
+
 
   if (currentMillis - previousMillis >= interval) {
     previousMillis = currentMillis;
-    readings_total();
-    smoothing();
+    soil_readings();
+  }
+
+  if (currentMillis2 - previousMillis2 >= interval2) {
+    previousMillis2 = currentMillis2;
+    dht_readings();
   }
 
   // active modules
@@ -163,6 +173,8 @@ void loop(void) {
 //////////////////////
 // HELPER FUNCTIONS //
 //////////////////////
+//final static int DELAY = 1000;
+//int nextTimer, counter;
 
 int value; // soil data
 
@@ -174,20 +186,64 @@ int previousTemperature;
 int humid;
 int temp;
 
-// READINGS
-int readings_total() {
+int reading_passes; // soil iteratiosn while  loop
+
+// soil readings
+int soil_readings() {
 
   // Hygrometer
   digitalWrite(hygroJuice, HIGH);
-  delay(200);
+  delay(500);
 
-  value = analogRead(hygrometer);
-  value = constrain(value, 400, 1023);
-  value = map(value, 1023, 400, 0, 100);
+  reading_passes = 0;
+  while (reading_passes <  numReadings && digitalRead(hygroJuice) == HIGH ) {
 
-  delay(100);
+    Serial.print(" numreadings counter = ");
+    Serial.println(numReadings);
+    Serial.print("reading passes = ");
+    Serial.println(reading_passes);
+    Serial.print("read index = ");
+    Serial.println(readIndex);
+    Serial.print("array value = ");
+    Serial.println(readings[readIndex]);
+    Serial.print("analogmeter = ");
+    Serial.println(value);
+    Serial.print("total = ");
+    Serial.println(total);
+
+    //if (millis()< nextTimer)   return;
+
+    value = analogRead(hygrometer);
+    value = constrain(value, 400, 1023);
+    value = map(value, 1023, 400, 0, 100);
+    smoothing();
+
+    /*
+      Serial.print("i = ");
+      Serial.println(i);
+      Serial.print("read index = ");
+      Serial.println(readIndex);
+      Serial.print("array value = ");
+      Serial.println(readings[readIndex]);
+      Serial.print("analogmeter = ");
+      Serial.println(value);
+      delay(1000);
+      }
+      Serial.print("total = ");
+      Serial.println(total);
+    */
+    //nextTimer = millis() + DELAY;
+    reading_passes++;
+    delay(500);
+
+  }
+  Serial.println("loop ended");
+  delay(10);
   digitalWrite(hygroJuice, LOW);
 
+}
+
+int dht_readings() {
   // Humidity + Temperature
   float a = dht.readHumidity();
   // Read temperature as Celsius
