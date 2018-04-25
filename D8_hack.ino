@@ -18,6 +18,14 @@ int power = true;
 // soil readings async
 unsigned long previousMillis = 0;
 const long interval = 15000;
+const int inBetweenies = 100;   // delays between each read
+const int numReadings = 15;     // Increase to smooth more, but will slow down readings
+
+//    The interval between each read is 500ms, so 15 x 500 = 7500ms.
+//    This needs to be lower than "interval" (15000ms + 1000ms), or
+//    the readings will be unstable.
+
+// * Serial print will notify if the limits are set wrong!
 
 // dht readings async
 unsigned long previousMillis2 = 0;
@@ -47,7 +55,6 @@ boolean lastState = LOW;
 boolean LedState = LOW;
 
 // Smoothing variables
-const int numReadings = 10;     // increase to smooth more, but will slow down readings
 int readings[numReadings];      // the readings from the analog input
 int readIndex = 0;              // the index of the current reading
 int total = 0;                  // the running total
@@ -142,18 +149,30 @@ void setup(void) {
   for (int thisReading = 0; thisReading < numReadings; thisReading++) {
     readings[thisReading] = 0;
   }
+
+  // error handling for soil timings
+  if ((numReadings * inBetweenies) + 1000 > interval) {
+    Serial.println("ERROR: Your timing on 'interval' is ");
+    Serial.println("too low for the amount of 'numReadings'");
+    Serial.println("");
+  }
+
+  // inital read;
+  // soil_readings();
+  // serial_print();
 }
 
 void loop(void) {
 
   server.handleClient();
+
   unsigned long currentMillis = millis();
   unsigned long currentMillis2 = millis();
-
 
   if (currentMillis - previousMillis >= interval) {
     previousMillis = currentMillis;
     soil_readings();
+    serial_print();
   }
 
   if (currentMillis2 - previousMillis2 >= interval2) {
@@ -162,7 +181,6 @@ void loop(void) {
   }
 
   // active modules
-  serial_print();
   sync_leds();
   lcd_out();
   wifi_out();
@@ -193,53 +211,37 @@ int soil_readings() {
 
   // Hygrometer
   digitalWrite(hygroJuice, HIGH);
-  delay(500);
+  delay(990);
+  Serial.println("Amount of numreadings = ");
+  Serial.println(numReadings);
 
-  reading_passes = 0;
-  while (reading_passes <  numReadings && digitalRead(hygroJuice) == HIGH ) {
+  if (digitalRead(hygroJuice) == HIGH ) {
 
-    Serial.print(" numreadings counter = ");
-    Serial.println(numReadings);
-    Serial.print("reading passes = ");
-    Serial.println(reading_passes);
-    Serial.print("read index = ");
-    Serial.println(readIndex);
-    Serial.print("array value = ");
-    Serial.println(readings[readIndex]);
-    Serial.print("analogmeter = ");
-    Serial.println(value);
-    Serial.print("total = ");
+    reading_passes = 0;
+
+    while (reading_passes <  numReadings ) {
+
+      delay(inBetweenies);
+
+      value = analogRead(hygrometer);
+      value = constrain(value, 400, 1023);
+      value = map(value, 1023, 400, 0, 100);
+
+      smoothing(); // populate array
+
+      reading_passes++;
+
+      soil_phase_print();
+      soil_error();
+    }
+
+    Serial.println("loop ended");
+    Serial.print("Final total : ");
     Serial.println(total);
-
-    //if (millis()< nextTimer)   return;
-
-    value = analogRead(hygrometer);
-    value = constrain(value, 400, 1023);
-    value = map(value, 1023, 400, 0, 100);
-    smoothing();
-
-    /*
-      Serial.print("i = ");
-      Serial.println(i);
-      Serial.print("read index = ");
-      Serial.println(readIndex);
-      Serial.print("array value = ");
-      Serial.println(readings[readIndex]);
-      Serial.print("analogmeter = ");
-      Serial.println(value);
-      delay(1000);
-      }
-      Serial.print("total = ");
-      Serial.println(total);
-    */
-    //nextTimer = millis() + DELAY;
-    reading_passes++;
-    delay(500);
-
+    readIndex = 0;
+    delay(10);
+    digitalWrite(hygroJuice, LOW);
   }
-  Serial.println("loop ended");
-  delay(10);
-  digitalWrite(hygroJuice, LOW);
 
 }
 
@@ -376,6 +378,7 @@ int stdby() {
       lcd.backlight();
 
     } else {
+
       LedState = HIGH;
       power = false;
 
@@ -402,4 +405,30 @@ int smoothing() {
     readIndex = 0; // restart array
   }
   soil_avg = total / numReadings;
+}
+
+int soil_phase_print() {
+  Serial.print("[ I T E R A T I O N : ");
+  Serial.print(reading_passes );
+  Serial.println(" ]");
+  Serial.print("Current array index = ");
+  Serial.println(readIndex);
+  Serial.print("Current array value = ");
+  Serial.println(readings[readIndex]);
+  Serial.print("Current analog reading = ");
+  Serial.print(value);
+  Serial.println(" (direct)");
+  Serial.print("Current total = ");
+  Serial.println(total);
+  Serial.println("");
+};
+
+// error handling for soil timings
+int soil_error() {
+  if ((numReadings * inBetweenies) + 1000 > interval) {
+    Serial.println("");
+    Serial.println("ERROR: Your timing on 'interval' is ");
+    Serial.println("too low for the amount of 'numReadings'");
+    Serial.println("");
+  }
 }
