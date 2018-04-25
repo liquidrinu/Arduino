@@ -16,23 +16,23 @@ ESP8266WebServer server(80);
 int power = true;
 
 // soil readings async
-unsigned long previousMillis = 0;
-const long interval = 15000;
+unsigned long previousMillis_soil = 0;
+const long interval_soil = 15000;
 
 const int inBetweenies = 100;   // delays between each read
 const int numReadings = 15;     // Increase to smooth more, but will slow down readings
 
 //    The interval between each read is 100ms, so 15 x 100 = 1500ms.
 //    This needs to be lower than "interval" (15000ms + 1000ms), or
-//    the readings will be unstable. The added 1000ms is to give a bit 
+//    the readings will be unstable. The added 1000ms is to give a bit
 //    of leeway to the soilmeter's power input to suppres voltage spikes
 //    on the first few reads
 
 // * Serial print will notify if the limits are set wrong!
 
 // dht readings async
-unsigned long previousMillis2 = 0;
-const long interval2 = 2000;
+unsigned long previousMillis_dht = 0;
+const long interval_dht = 2000;
 
 // soil
 int treshold = 20; // 'dry'
@@ -154,9 +154,10 @@ void setup(void) {
   }
 
   // error handling for soil timings
-  if ((numReadings * inBetweenies) + 1000 > interval) {
+  if ((numReadings * inBetweenies) + 1000 > interval_soil) {
+    Serial.println("");
     Serial.println("ERROR: Your timing on 'interval' is ");
-    Serial.println("too low for the amount of 'numReadings'");
+    Serial.print("too low for the amount of 'numReadings'");
     Serial.println("");
   }
 
@@ -166,17 +167,17 @@ void loop(void) {
 
   server.handleClient();
 
-  unsigned long currentMillis = millis();
-  unsigned long currentMillis2 = millis();
+  unsigned long currentMillis_soil = millis();
+  unsigned long currentMillis_dht = millis();
 
-  if (currentMillis - previousMillis >= interval) {
-    previousMillis = currentMillis;
+  if (currentMillis_soil - previousMillis_soil >= interval_soil) {
+    previousMillis_soil = currentMillis_soil;
     soil_readings();
     serial_print();
   }
 
-  if (currentMillis2 - previousMillis2 >= interval2) {
-    previousMillis2 = currentMillis2;
+  if (currentMillis_dht - previousMillis_dht >= interval_dht) {
+    previousMillis_dht = currentMillis_dht;
     dht_readings();
   }
 
@@ -244,6 +245,7 @@ int soil_readings() {
 }
 
 int dht_readings() {
+  
   // Humidity + Temperature
   float a = dht.readHumidity();
   // Read temperature as Celsius
@@ -266,6 +268,7 @@ int dht_readings() {
     temp = previousTemperature;
 
   }
+  
 }
 
 // Serial OUT
@@ -290,6 +293,7 @@ int serial_print() {
   }
 
   Serial.println("-----------------------");
+  
 }
 
 //WIFI OUT
@@ -310,6 +314,7 @@ int wifi_out() {
   mesg += ";\n";
 
   server.send(200, "text/plain", mesg);
+  
 }
 
 // synced leds
@@ -403,9 +408,11 @@ int smoothing() {
     readIndex = 0; // re-initialize array
   }
   soil_avg = total / numReadings;
+  
 }
 
 int soil_phase_print() {
+
   Serial.print("[ I T E R A T I O N : ");
   Serial.print(reading_passes );
   Serial.println(" ]");
@@ -419,14 +426,17 @@ int soil_phase_print() {
   Serial.print("Current total = ");
   Serial.println(total);
   Serial.println("");
+
 };
 
 // error handling for soil timings
 int soil_error() {
-  if ((numReadings * inBetweenies) + 1000 > interval) {
+
+  if ((numReadings * inBetweenies) + 1000 > interval_soil) {
     Serial.println("");
     Serial.print("ERROR: Your timing on 'interval' is too low to");
     Serial.println("do the amount of 'numReadings' you want");
     Serial.println("");
   }
+
 }
