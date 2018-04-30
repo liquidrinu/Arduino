@@ -17,7 +17,7 @@ int power = true;
 
 // soil readings async
 unsigned long previousMillis_soil = 0;
-const long interval_soil = 15000;
+const long interval_soil = 30000;
 
 const int inBetweenies = 100;   // delays between each read
 const int numReadings = 15;     // Increase to smooth more, but will slow down readings
@@ -161,6 +161,11 @@ void setup(void) {
     Serial.println("");
   }
 
+  // TEST FUNCTION
+  test_init();
+  dht_readings();
+  soil_readings();
+  delay(500);
 }
 
 void loop(void) {
@@ -245,7 +250,7 @@ int soil_readings() {
 }
 
 int dht_readings() {
-  
+
   // Humidity + Temperature
   float a = dht.readHumidity();
   // Read temperature as Celsius
@@ -268,7 +273,7 @@ int dht_readings() {
     temp = previousTemperature;
 
   }
-  
+
 }
 
 // Serial OUT
@@ -293,7 +298,7 @@ int serial_print() {
   }
 
   Serial.println("-----------------------");
-  
+
 }
 
 //WIFI OUT
@@ -314,7 +319,7 @@ int wifi_out() {
   mesg += ";\n";
 
   server.send(200, "text/plain", mesg);
-  
+
 }
 
 // synced leds
@@ -408,7 +413,7 @@ int smoothing() {
     readIndex = 0; // re-initialize array
   }
   soil_avg = total / numReadings;
-  
+
 }
 
 int soil_phase_print() {
@@ -428,6 +433,25 @@ int soil_phase_print() {
   Serial.println("");
 
 };
+
+// Initial test function
+int ledPins[] = {sa1, sa2, sa3};
+int currentLed;
+
+int test_init() {
+  for (int i = 0; i < 3; i++) {
+    currentLed = ledPins[i];
+    for (int j = 0; j < 10; j++) {
+      analogWrite(currentLed, 0);
+      delay(50);
+      analogWrite(currentLed, 255);
+      delay(50);
+    }
+  }
+  digitalWrite(sa1, LOW);
+  digitalWrite(sa2, LOW);
+  digitalWrite(sa3, LOW);
+}
 
 // error handling for soil timings
 int soil_error() {
