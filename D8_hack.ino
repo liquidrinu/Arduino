@@ -165,7 +165,6 @@ void setup(void) {
   test_init();
   dht_readings();
   soil_readings();
-  delay(500);
 }
 
 void loop(void) {
