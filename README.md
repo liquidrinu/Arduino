@@ -31,7 +31,7 @@ Improvements:
 - decreased corrosion
 - easier/more config
 
-## Quick Start
+## Get Started
 
 ###### Main code file is MAIN.ino (deprecated use D8_hack.ino)
 
