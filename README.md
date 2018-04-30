@@ -33,7 +33,7 @@ Improvements:
 
 ## Quick Start
 
-###### Main code file is MAIN.ino
+###### Main code file is MAIN.ino (deprecated use D8_hack.ino)
 
 1.) Solder/connect *VIN* ('Power +' pin on pcb) to LCD *VCC* on the I2C module. 
 ###### The pcb states 3.3V, but it's 5V from the USB
