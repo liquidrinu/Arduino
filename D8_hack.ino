@@ -23,7 +23,7 @@ const int inBetweenies = 100;   // delays between each read
 const int numReadings = 15;     // Increase to smooth more, but will slow down readings
 
 //    The interval between each read is 100ms, so 15 x 100 = 1500ms.
-//    This needs to be lower than "interval" (15000ms + 1000ms), or
+//    This needs to be lower than "interval_soil" + 1000ms, or
 //    the readings will be unstable. The added 1000ms is to give a bit
 //    of leeway to the soilmeter's power input to suppres voltage spikes
 //    on the first few reads
