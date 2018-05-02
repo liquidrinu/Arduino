@@ -26,6 +26,8 @@ int potRead = A0;
 int potVol = A7;
 int vol; // mapped reading;
 
+int track = "mySong.wav"; // place path for track name from SD here
+
 TMRpcm au;   // create an object for use in this sketch
 
 int speakerPin = 11;
@@ -41,7 +43,7 @@ void setup() {
 
   au.speakerPin = 11; //11 on Mega, 9 on Uno, Nano, etc
   au.quality(1);
-  au.play("dq.wav"); // filename
+  au.play(track); // filename
   au.volume(1);
   au.loop(1);
 
