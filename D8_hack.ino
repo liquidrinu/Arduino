@@ -5,7 +5,7 @@
 
 // WIFI credentials
 const char* ssid = "secret";
-const char* password = "secret";
+const char* password = "secrets";
 
 ESP8266WebServer server(80);
 
@@ -162,6 +162,7 @@ void setup(void) {
   }
 
   // TEST FUNCTION
+  lcd.clear();
   test_init();
   dht_readings();
   soil_readings();
@@ -214,6 +215,11 @@ int soil_readings() {
 
   // Hygrometer
   digitalWrite(hygroJuice, HIGH);
+
+  if (power == true) {
+    analogWrite(sa3, brightness);
+  }
+
   delay(990);
   Serial.println("Amount of numreadings = ");
   Serial.println(numReadings);
@@ -236,6 +242,7 @@ int soil_readings() {
 
       soil_phase_print();
       soil_error();
+
     }
 
     Serial.println("loop ended");
@@ -244,6 +251,7 @@ int soil_readings() {
     readIndex = 0;
     delay(10);
     digitalWrite(hygroJuice, LOW);
+    analogWrite(sa3, 0);
   }
 
 }
