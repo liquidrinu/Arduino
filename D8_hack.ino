@@ -339,9 +339,9 @@ int sync_leds() {
       analogWrite(sa3, 0);
 
       analogWrite(sa1, brightness); // treshold led
-      delay(100);
-      analogWrite(sa1, 0);
-      delay(100);
+      //delay(100);
+      //analogWrite(sa1, 0);
+      //delay(100);
     } else {
       analogWrite(sa2, brightness);
       analogWrite(sa1, LOW);
