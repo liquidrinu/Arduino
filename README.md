@@ -14,11 +14,13 @@
 
 Download LCD library from here : https://github.com/fdebrabander/Arduino-LiquidCrystal-I2C-library
 
-# (highly recommended) D8_hack.ino
+## (highly recommended) D8_PORTAL.ino / D8_hack.ino 
+
+**D8_PORTAL is same source but with a webportal for credentials**
 
 Current setup corrodes the soil meter real fast.
 
-The way to fix this is to wire pin **D8** to the **Vcc** of the soilmeter module, then upload **D8_hack.ino** on to the nodemcu.
+The way to fix this is to wire pin **D8** to the **Vcc** of the soilmeter module, then upload **D8_hack.ino/D8_PORTAL.ino** on to the nodemcu.
 
 ** cut one end of a female dupont cable, then solder one end to the pin on the board, and plug the other on the **Vcc** header of the **plant sensor module** **
 
@@ -31,9 +33,9 @@ Improvements:
 - decreased corrosion
 - easier/more config
 
-## Get Started
+# Get Started
 
-###### Main code file is MAIN.ino (deprecated use D8_hack.ino)
+###### Main code file is MAIN.ino (deprecated use D8_hack.ino/D8_PORTAL.ino)
 
 1.) Solder/connect *VIN* ('Power +' pin on pcb) to LCD *VCC* on the I2C module. 
 ###### The pcb states 3.3V, but it's 5V from the USB
@@ -41,6 +43,8 @@ Improvements:
 2.) SDA and SCL wires need to be swapped around
 
 3.) Enter your own SSID and PASSWORD in the "MAIN.ino" or "D8_hack.ino" file
+
+    Alternatively use D8_PORTAL.ino to add credentials through a webportal at runtime
 
 4.) upload the code
 ```
