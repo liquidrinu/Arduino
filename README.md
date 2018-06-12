@@ -16,7 +16,7 @@ Download LCD library from here : https://github.com/fdebrabander/Arduino-LiquidC
 
 ## (highly recommended) D8_PORTAL.ino / D8_hack.ino 
 
-**D8_PORTAL is same source but with a webportal for credentials**
+**D8_PORTAL is same source as D8_hack.ino but with a webportal for credentials**
 
 Current setup corrodes the soil meter real fast.
 
