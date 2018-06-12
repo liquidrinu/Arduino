@@ -1,7 +1,5 @@
 #include <ESP8266WiFi.h>
-#include <WiFiClient.h>
 #include <ESP8266WebServer.h>
-#include <ESP8266mDNS.h>
 #include <AutoConnect.h>
 
 ESP8266WebServer server(80);
@@ -53,7 +51,7 @@ LiquidCrystal_I2C lcd(0x3f, 20, 4); // (memory address, columns, rows);
 int TouchSensor = 14;
 boolean currentState = LOW;
 boolean lastState = LOW;
-boolean LedState = LOW;
+boolean LedState = LOW; 
 
 // Smoothing variables
 int readings[numReadings];      // the readings from the analog input
@@ -117,21 +115,7 @@ void setup(void) {
 
   // webserver
   digitalWrite(sa3, 0);
-  Serial.begin(115200);
-  WiFi.mode(WIFI_STA);
-  Serial.println("");
-
-  // Wait for connection
-  Serial.println("");
-  Serial.print("Connected to ");
-  //  Serial.println(ssid);
-  Serial.print("IP address: ");
-  Serial.println(WiFi.localIP());
-
-  if (MDNS.begin("esp8266")) {
-    Serial.println("MDNS responder started");
-  }
-
+  
   server.on("/", handleRoot);
 
   server.on("/plant", wifi_out);
@@ -139,7 +123,6 @@ void setup(void) {
   server.onNotFound(handleNotFound);
 
   Portal.begin();
-  Serial.println("HTTP server started");
 
   // smoothing init
   for (int thisReading = 0; thisReading < numReadings; thisReading++) {
@@ -463,4 +446,19 @@ int soil_error() {
     Serial.println("");
   }
 
+}
+
+// wifi reset
+int wifiReset() {
+  delay(1000);
+  Serial.begin(115200);
+  WiFi.mode(WIFI_STA);
+  delay(100);
+  WiFi.begin();
+  if (WiFi.waitForConnectResult() == WL_CONNECTED) {
+    WiFi.disconnect();
+    while (WiFi.status() == WL_CONNECTED)
+      delay(100);
+  }
+  Serial.println("WiFi disconnected.");
 }
