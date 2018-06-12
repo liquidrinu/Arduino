@@ -13,7 +13,7 @@ int power = true;
 
 // soil readings async
 unsigned long previousMillis_soil = 0;
-const long interval_soil = 300000;
+const long interval_soil = 300000; // 5 minutes default
 
 const int inBetweenies = 100;   // delays between each read
 const int numReadings = 15;     // Increase to smooth more, but will slow down readings
