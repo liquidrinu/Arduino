@@ -56,6 +56,8 @@ Improvements:
 
 5.) Readings can be found on http://192.168.1.x/plant (where 'x' is the ip assigned by your network)
 
+*Readings from the DHT11 can be 1 minute off, but solved with software hack to keep continuous output (memoization), but do keep this in mind.*
+
 ## D8_PORTAL (important)
 
 1.) Connect through wifi on your phone to the esp8266 and use passwd 12345678.
@@ -68,5 +70,3 @@ Improvements:
 
 5.) Change AP settings at /_ac
 
-
-*Readings from the DHT11 can be 1 minute off, but solved with software hack to keep continuous output (memoization), but do keep this in mind.*
