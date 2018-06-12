@@ -66,7 +66,7 @@ Improvements:
 
 3.) Click "Configure new AP" and choose your local network.
 
-4.) You can now select from 192.168.1.x
+4.) You can now select from http://192.168.1.x when connected to the local network.
 
-5.) Change AP settings at /_ac
+5.) Change AP settings at http://192.168.1.x/plant/_ac
 
