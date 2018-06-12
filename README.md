@@ -36,9 +36,9 @@ Improvements:
 # Get Started
 
 ###### Main code file is MAIN.ino (deprecated use D8_hack.ino/D8_PORTAL.ino)
+###### The pcb states 3.3V, but it's 5V from the USB
 
 1.) Solder/connect *VIN* ('Power +' pin on pcb) to LCD *VCC* on the I2C module. 
-###### The pcb states 3.3V, but it's 5V from the USB
 
 2.) SDA and SCL wires need to be swapped around
 
@@ -68,5 +68,5 @@ Improvements:
 
 4.) You can now select from http://192.168.1.x when connected to the local network.
 
-5.) Change AP settings at http://192.168.1.x/plant/_ac
+5.) Change AP settings at http://192.168.1.x/_ac
 
