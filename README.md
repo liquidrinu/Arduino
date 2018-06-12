@@ -59,9 +59,14 @@ Improvements:
 ## D8_PORTAL (important)
 
 1.) Connect through wifi on your phone to the esp8266 and use passwd 12345678.
+
 2.) it should automatically ask for redirection to a captive webportal page.
+
 3.) Click "Configure new AP" and choose your local network.
+
 4.) You can now select from 192.168.1.x
+
 5.) Change AP settings at /_ac
+
 
 *Readings from the DHT11 can be 1 minute off, but solved with software hack to keep continuous output (memoization), but do keep this in mind.*
