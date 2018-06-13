@@ -5,7 +5,7 @@
 
 // WIFI credentials
 const char* ssid = "secret";
-const char* password = "secrets";
+const char* password = "secret";
 
 ESP8266WebServer server(80);
 
