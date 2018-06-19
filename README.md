@@ -42,9 +42,7 @@ Improvements:
 
 2.) SDA and SCL wires need to be swapped around (SDA -> SCL and vice versa)
 
-3.) Enter your own SSID and PASSWORD in the "MAIN.ino" or "D8_hack.ino" file, or..
-
-   ** .. alternatively use D8_PORTAL.ino to add credentials through a webportal at runtime
+3.) Enter your own SSID and PASSWORD in the "MAIN.ino" or "D8_hack.ino" file.
 
 4.) upload the code
 ```
@@ -60,13 +58,15 @@ Improvements:
 
 ## D8_PORTAL (important)
 
-1.) Connect through wifi on your phone to the esp8266 and use passwd 12345678.
+1.) Upload both 'D8_PORTAL.ino' and 'index.h' ( both in same folder) and re-plug the board.
 
-2.) it should automatically ask for redirection to a captive webportal page.
+2.) Connect through wifi on your phone to the esp8266 and use passwd 12345678.
 
-3.) Click "Configure new AP" and choose your local network.
+3.) it should automatically ask for redirection to a captive webportal page.
 
-4.) You can now select from http://192.168.1.x when connected to the local network.
+4.) Click "Configure new AP" and choose your local network.
 
-5.) Change AP settings at http://192.168.1.x/_ac
+5.) You can now select from http://192.168.1.x when connected to the local network.
+
+6.) Change AP settings at http://192.168.1.x/_ac
 
