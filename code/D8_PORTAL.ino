@@ -139,6 +139,8 @@ void setup(void)
 
   server.on("/data", ajax);
 
+  server.on("/soil_reading", soil_readings);
+
   server.onNotFound(handleNotFound);
 
   Portal.begin();
