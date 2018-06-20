@@ -51,24 +51,31 @@ const char MAIN_page[] PROGMEM = R"=====(
       <div id="power" class="power"></div>
     </div>
 
-    <button type="button" onclick="lightState()">
+    <button type="button" onclick="ajax('lights')">
       lights
+    </button>
+
+      <button type="button" onclick="ajax('soil_reading')">
+      soil reading
     </button>
 
   </CENTER>
 
   <SCRIPT>
-    function lightState() {
+
+    function ajax(url) {
       var xhttp = new XMLHttpRequest();
       xhttp.onreadystatechange = function () {
         if (this.readyState == 4 && this.status == 200) {
 
         }
       };
-      xhttp.open("GET", "lights", true);
+      xhttp.open("GET", url, true);
       xhttp.send();
     }
 
+
+    // state update 
     (function ajaxFn() {
       let xhttp = new XMLHttpRequest();
       xhttp.onreadystatechange = function () {
@@ -90,8 +97,9 @@ const char MAIN_page[] PROGMEM = R"=====(
       let symbol = ["%", "C", "%", ""];
 
       for (let i = 0; i <= 3; i++) {
-        if (str[i] !== null || str[i] !== undefined) {
+        if (str[i] !== null || str[i] !== "undefined") {
           divider(str[i], symbol[i], value[i]);
+          console.log(str[i]);
         }
       }
 
