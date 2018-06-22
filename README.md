@@ -54,7 +54,7 @@ Improvements:
 
 5.) Readings can be found on http://192.168.1.x (where 'x' is the ip assigned by your network)
 
-* data can be found at localip:port/data in 5 columns seperated by whitespace (air humidity, temperature, soil moisture level, display state, soil moisture treshold).
+*data can be found at localip:port/data in 5 columns seperated by whitespace (air humidity, temperature, soil moisture level, display state, soil moisture treshold).*
 
 *Readings from the DHT11 can be 1 minute off, but solved with software hack to keep continuous output (memoization), but do keep this in mind.*
 
