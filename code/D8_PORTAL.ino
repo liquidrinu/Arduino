@@ -140,7 +140,7 @@ void setup(void)
 
   server.on("/", handleRoot);
 
-  server.on("/plant", wifi_out);
+  //server.on("/plant", wifi_out);
 
   server.on("/lights", lights);
 
@@ -204,7 +204,7 @@ void loop(void)
   // active modules
   sync_leds();
   lcd_out();
-  wifi_out();
+  //wifi_out();
   stdby();
 }
 
