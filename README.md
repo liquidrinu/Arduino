@@ -72,5 +72,5 @@ Improvements:
 
 6.) Change AP settings at http://192.168.1.x/_ac
 
-7.) Data can be found at localip:port/data in 5 columns seperated by whitespace (air humidity, temperature, soil moisture level, display state, soil moisture treshold
+7.) Data can be found at localip:port/data in 5 columns seperated by whitespace (air humidity, temperature, soil moisture level, display state, soil moisture treshold)
 
