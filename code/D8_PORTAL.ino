@@ -2,6 +2,10 @@
 // C O N F I G U R A T I O N  //
 ////////////////////////////////
 
+//EEPROM
+#include <EEPROM.h>
+int soil_addr = 0;
+
 // Webserver
 #include <ESP8266WiFi.h>
 #include <ESP8266WebServer.h>
@@ -79,7 +83,6 @@ DHT dht(DHTPIN, DHTTYPE);
 
 void handleRoot()
 {
-
   String homePage = MAIN_page;
   server.send(200, "text/html", homePage);
 
@@ -108,6 +111,10 @@ void handleNotFound()
 
 void setup(void)
 {
+
+  // EEPROM
+  EEPROM.begin(512);
+  treshold = EEPROM.read(soil_addr);
 
   // lcd
   lcd.begin();
@@ -140,6 +147,8 @@ void setup(void)
   server.on("/data", ajax);
 
   server.on("/soil_reading", soil_readings);
+
+  server.on("/soil_limit", soil_limit);
 
   server.onNotFound(handleNotFound);
 
@@ -202,6 +211,22 @@ void loop(void)
 ////////////////////////
 // F U N C T I O N S  //
 ////////////////////////
+
+// EEPROM config
+
+int soil_limit()
+{
+
+  String soilValue = server.arg("soil_value");
+  int data = soilValue.toInt();
+
+  if (data <= 100 && data > 0)
+  {
+    EEPROM.write(soil_addr, data);
+    EEPROM.commit();
+    treshold = data;
+  }
+}
 
 int value; // soil data
 
@@ -397,7 +422,10 @@ int lcd_out()
     else
     {
       lcd.setCursor(0, 3);
-      lcd.print("                    ");
+      //lcd.print("                    ");
+      lcd.print("    treshold: ");
+      lcd.print(treshold);
+      lcd.print("%");
     }
   }
 }
@@ -557,6 +585,7 @@ int ajax()
   int b = temp;
   int c = soil_avg;
   String d = "";
+  int e = treshold;
 
   if (power == true)
   {
@@ -575,6 +604,8 @@ int ajax()
   val += c;
   val += " ";
   val += d;
+  val += " ";
+  val += e;
   val += " ";
   server.send(200, "text/plain", val);
 }
