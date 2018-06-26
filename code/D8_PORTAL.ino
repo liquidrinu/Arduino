@@ -204,7 +204,7 @@ void loop(void)
 
   // active modules
   sync_leds();
-  stdby();
+  touchBtn();
   delay(5);
 }
 
@@ -417,7 +417,7 @@ void touchBtn()
 
   if (currentState == HIGH && lastState == LOW)
   {
-    lightState();
+    lights();
   }
   lastState = currentState;
 }
@@ -425,7 +425,7 @@ void touchBtn()
 // Turn on/off display and leds.
 void lights()
 {
-
+  delay(5);
   if (lightState == LOW)
   {
 
