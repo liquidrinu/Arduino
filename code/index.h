@@ -13,14 +13,11 @@ const char MAIN_page[] PROGMEM = R"=====(
     * {
       margin: 0;
       padding: 0;
-      outline: 0;
-      /*font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif; */
     }
 
     body {
       background-color: black;
       color: black;
-      /* width: 100%; */
       clear: both;
       touch-action: manipulation;
     }
@@ -35,7 +32,7 @@ const char MAIN_page[] PROGMEM = R"=====(
     input {
       color: white;
       font-size: 24px;
-      width: 50%;
+      width: 70%;
       height: 50px;
       margin: 2px;
       border: solid green 2px;
@@ -59,6 +56,7 @@ const char MAIN_page[] PROGMEM = R"=====(
     div {
       margin: 4px;
     }
+    
   </STYLE>
 
 </HEAD>
@@ -100,14 +98,14 @@ const char MAIN_page[] PROGMEM = R"=====(
 
   <SCRIPT>
 
-    function ajax(url, data) {
-      var xhttp = new XMLHttpRequest();
+    function ajax(url) {
+      let xhttp = new XMLHttpRequest();
       xhttp.onreadystatechange = function () {
         if (this.readyState == 4 && this.status == 200) {
-
+          
         }
       };
-      xhttp.open("GET", url, true);
+      xhttp.open("POST", url, true);
       xhttp.send();
     }
 
@@ -134,7 +132,6 @@ const char MAIN_page[] PROGMEM = R"=====(
       for (let i = 0; i <= 4; i++) {
         if (str[i] !== null || str[i] !== "undefined") {
           divider(str[i], symbol[i], value[i]);
-          console.log(str[i]);
         }
       }
 
