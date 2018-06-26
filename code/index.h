@@ -13,6 +13,7 @@ const char MAIN_page[] PROGMEM = R"=====(
     * {
       margin: 0;
       padding: 0;
+      outline: none;
     }
 
     body {
@@ -56,7 +57,6 @@ const char MAIN_page[] PROGMEM = R"=====(
     div {
       margin: 4px;
     }
-    
   </STYLE>
 
 </HEAD>
@@ -77,11 +77,11 @@ const char MAIN_page[] PROGMEM = R"=====(
     </div>
 
     <div>
-      <button type="button" onclick="ajax('lights')">
+      <button type="button" id "lightBtn" onclick="ajaxBtn('lights', 'lightBtn')">
         lights
       </button>
 
-      <button type="button" onclick="ajax('soil_reading')">
+      <button type="button" id="soilBtn" onclick="ajaxBtn('soil_reading', 'soilBtn')">
         soil reading
       </button>
     </div>
@@ -98,11 +98,15 @@ const char MAIN_page[] PROGMEM = R"=====(
 
   <SCRIPT>
 
-    function ajax(url) {
+    function ajaxBtn(url, id) {
+      //document.getElementById(id).style.backgroundColor = 'red';
+      //document.getElementById(id).onclick = false;
+
       let xhttp = new XMLHttpRequest();
       xhttp.onreadystatechange = function () {
         if (this.readyState == 4 && this.status == 200) {
-          
+          //document.getElementById(id).style.backgroundColor = 'black';
+          //document.getElementById(id).onclick = true;
         }
       };
       xhttp.open("POST", url, true);
@@ -148,6 +152,7 @@ const char MAIN_page[] PROGMEM = R"=====(
 
       let z = 0;
       let y = document.getElementById('soil_input');
+
       z = y.value;
 
       if (z < 100 && z > 0 && z !== "") {
