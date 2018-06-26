@@ -17,7 +17,7 @@ AutoConnect Portal(server);
 AutoConnect portal;
 
 // HTML
-#import "index.h"
+#include "index.h"
 
 // general settings
 int power = true;
@@ -62,7 +62,7 @@ LiquidCrystal_I2C lcd(0x3f, 20, 4); // (memory address, columns, rows);
 int TouchSensor = 14;
 boolean currentState = LOW;
 boolean lastState = LOW;
-boolean lightState = LOW;
+boolean lightState = HIGH;
 
 // Smoothing variables
 int readings[numReadings]; // the readings from the analog input
@@ -112,6 +112,8 @@ void handleNotFound()
 void setup(void)
 {
 
+  Portal.begin();
+
   // EEPROM
   EEPROM.begin(512);
   treshold = EEPROM.read(soil_addr);
@@ -140,19 +142,15 @@ void setup(void)
 
   server.on("/", handleRoot);
 
-  //server.on("/plant", wifi_out);
-
   server.on("/lights", lights);
 
-  server.on("/data", ajax);
+  server.on("/data", dataState);
 
   server.on("/soil_reading", soil_readings);
 
   server.on("/soil_limit", soil_limit);
 
   server.onNotFound(handleNotFound);
-
-  Portal.begin();
 
   // smoothing init
   for (int thisReading = 0; thisReading < numReadings; thisReading++)
@@ -174,6 +172,7 @@ void setup(void)
   test_init();
   dht_readings();
   soil_readings();
+  lcd_out();
 }
 
 ///////////////////////
@@ -193,19 +192,20 @@ void loop(void)
     previousMillis_soil = currentMillis_soil;
     soil_readings();
     serial_print();
+    lcd_out();
   }
 
   if (currentMillis_dht - previousMillis_dht >= interval_dht)
   {
     previousMillis_dht = currentMillis_dht;
     dht_readings();
+    lcd_out();
   }
 
   // active modules
   sync_leds();
-  lcd_out();
-  //wifi_out();
   stdby();
+  delay(5);
 }
 
 ////////////////////////
@@ -214,7 +214,7 @@ void loop(void)
 
 // EEPROM config
 
-int soil_limit()
+void soil_limit()
 {
 
   String soilValue = server.arg("soil_value");
@@ -225,6 +225,7 @@ int soil_limit()
     EEPROM.write(soil_addr, data);
     EEPROM.commit();
     treshold = data;
+    lcd_out();
   }
 }
 
@@ -241,7 +242,7 @@ int temp;
 int reading_passes; // soil iteratiosn while  loop
 
 // soil readings
-int soil_readings()
+void soil_readings()
 {
 
   // Hygrometer
@@ -288,7 +289,7 @@ int soil_readings()
   }
 }
 
-int dht_readings()
+void dht_readings()
 {
 
   // Humidity + Temperature
@@ -317,7 +318,7 @@ int dht_readings()
 }
 
 // Serial OUT
-int serial_print()
+void serial_print()
 {
 
   Serial.write(12); // clear terminal
@@ -344,29 +345,8 @@ int serial_print()
   Serial.println("-----------------------");
 }
 
-//WIFI OUT
-int wifi_out()
-{
-
-  String mesg = "";
-  mesg += " Air Humidity : '";
-  mesg += humid;
-  mesg += "' %";
-  mesg += ";\n";
-  mesg += " Temperature' : '";
-  mesg += temp;
-  mesg += "' C";
-  mesg += ";\n";
-  mesg += " Soil         : '";
-  mesg += soil_avg;
-  mesg += "' %";
-  mesg += ";\n";
-
-  server.send(200, "text/plain", mesg);
-}
-
 // synced leds
-int sync_leds()
+void sync_leds()
 {
 
   if (power == true)
@@ -391,7 +371,7 @@ int sync_leds()
 }
 
 // LCD output
-int lcd_out()
+void lcd_out()
 {
 
   if (!isnan(humid))
@@ -422,7 +402,6 @@ int lcd_out()
     else
     {
       lcd.setCursor(0, 3);
-      //lcd.print("                    ");
       lcd.print("    treshold: ");
       lcd.print(treshold);
       lcd.print("%");
@@ -430,40 +409,46 @@ int lcd_out()
   }
 }
 
-// Standby
-int stdby()
+// Trigger lights function
+void touchBtn()
 {
 
   currentState = digitalRead(TouchSensor);
 
   if (currentState == HIGH && lastState == LOW)
   {
-    delay(5);
-    if (lightState == HIGH)
-    {
-
-      lightState = LOW;
-      power = true;
-      lcd.backlight();
-    }
-    else
-    {
-
-      lightState = HIGH;
-      power = false;
-
-      // turn off leds and screen
-      digitalWrite(sa1, LOW);
-      digitalWrite(sa2, LOW);
-      digitalWrite(sa3, LOW);
-      lcd.noBacklight();
-    }
+    lightState();
   }
   lastState = currentState;
 }
 
+// Turn on/off display and leds.
+void lights()
+{
+
+  if (lightState == LOW)
+  {
+
+    lightState = HIGH;
+    power = true;
+
+    lcd.backlight();
+  }
+  else
+  {
+    lightState = LOW;
+    power = false;
+
+    // turn off leds and screen
+    digitalWrite(sa1, LOW);
+    digitalWrite(sa2, LOW);
+    digitalWrite(sa3, LOW);
+    lcd.noBacklight();
+  }
+}
+
 // Smoothing function (soil)
-int smoothing()
+void smoothing()
 {
 
   total = total - readings[readIndex]; // subtract the last reading
@@ -478,7 +463,7 @@ int smoothing()
   soil_avg = total / numReadings;
 }
 
-int soil_phase_print()
+void soil_phase_print()
 {
 
   Serial.print("[ I T E R A T I O N : ");
@@ -500,7 +485,7 @@ int soil_phase_print()
 int ledPins[] = {sa1, sa2, sa3};
 int currentLed;
 
-int test_init()
+void test_init()
 {
   for (int i = 0; i < 3; i++)
   {
@@ -519,7 +504,7 @@ int test_init()
 }
 
 // error handling for soil timings
-int soil_error()
+void soil_error()
 {
 
   if ((numReadings * inBetweenies) + 1000 > interval_soil)
@@ -532,7 +517,7 @@ int soil_error()
 }
 
 // wifi reset
-int wifiReset()
+void wifiReset()
 {
   delay(1000);
   Serial.begin(115200);
@@ -548,38 +533,7 @@ int wifiReset()
   Serial.println("WiFi disconnected.");
 }
 
-// stdby wifi
-int lights()
-{
-  currentState = HIGH;
-
-  if (currentState == HIGH && lastState == LOW)
-  {
-    delay(5);
-    if (lightState == HIGH)
-    {
-
-      lightState = LOW;
-      power = true;
-      lcd.backlight();
-    }
-    else
-    {
-
-      lightState = HIGH;
-      power = false;
-
-      // turn off leds and screen
-      digitalWrite(sa1, LOW);
-      digitalWrite(sa2, LOW);
-      digitalWrite(sa3, LOW);
-      lcd.noBacklight();
-    }
-  }
-  lastState = currentState;
-}
-
-int ajax()
+void dataState()
 {
   int a = humid;
   int b = temp;
