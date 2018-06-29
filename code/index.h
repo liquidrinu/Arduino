@@ -36,7 +36,7 @@ const char MAIN_page[] PROGMEM = R"=====(
       width: 70%;
       height: 50px;
       margin: 2px;
-      border: solid green 2px;
+      border: solid #dc0567 2px;
       background-color: black;
     }
 
@@ -57,6 +57,17 @@ const char MAIN_page[] PROGMEM = R"=====(
     div {
       margin: 4px;
     }
+
+    /* ANIMATIONS */
+    .blinkBtn {
+      animation: blinky 0.2s linear infinite;
+     }
+
+     @keyframes blinky {
+      80% {
+        opacity: 0;
+      }
+      
   </STYLE>
 
 </HEAD>
@@ -72,7 +83,7 @@ const char MAIN_page[] PROGMEM = R"=====(
       <div id="humidity" class="data"></div>
       <div id="temperature" class="data"></div>
       <div id="soil" class="data"></div>
-      <div id="power" class="power"></div>
+      <div id="display" class="power"></div>
       <div id="treshold" class="power"></div>
     </div>
 
@@ -100,12 +111,14 @@ const char MAIN_page[] PROGMEM = R"=====(
 
     function ajaxBtn(url, id) {
       document.getElementById(id).style.backgroundColor = '#dc0567';
+      document.getElementById(id).classList.add('blinkBtn');
 
       let xhttp = new XMLHttpRequest();
       xhttp.onreadystatechange = function () {
         if (this.readyState == 4 && this.status == 200) {
           if (this.responseText == "done"){
           document.getElementById(id).style.backgroundColor = 'black';
+          document.getElementById(id).classList.remove('blinkBtn');
           }
         }
       };
@@ -130,7 +143,7 @@ const char MAIN_page[] PROGMEM = R"=====(
     function fullState(val) {
 
       let str = val.split(" ", 5);
-      let value = ["humidity", "temperature", "soil", "power", "treshold"];
+      let value = ["humidity", "temperature", "soil", "display", "treshold"];
       let symbol = ["%", "C", "%", "", "%"];
 
       for (let i = 0; i <= 4; i++) {
