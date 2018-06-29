@@ -77,7 +77,7 @@ const char MAIN_page[] PROGMEM = R"=====(
     </div>
 
     <div>
-      <button type="button" id "lightBtn" onclick="ajaxBtn('lights', 'lightBtn')">
+      <button type="button" id="lightBtn" onclick="ajaxBtn('lights', 'lightBtn')">
         lights
       </button>
 
@@ -99,14 +99,14 @@ const char MAIN_page[] PROGMEM = R"=====(
   <SCRIPT>
 
     function ajaxBtn(url, id) {
-      //document.getElementById(id).style.backgroundColor = 'red';
-      //document.getElementById(id).onclick = false;
+      document.getElementById(id).style.backgroundColor = '#dc0567';
 
       let xhttp = new XMLHttpRequest();
       xhttp.onreadystatechange = function () {
         if (this.readyState == 4 && this.status == 200) {
-          //document.getElementById(id).style.backgroundColor = 'black';
-          //document.getElementById(id).onclick = true;
+          if (this.responseText == "done"){
+          document.getElementById(id).style.backgroundColor = 'black';
+          }
         }
       };
       xhttp.open("POST", url, true);
