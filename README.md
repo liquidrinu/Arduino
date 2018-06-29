@@ -54,10 +54,6 @@ Improvements:
 
 5.) Readings can be found on http://192.168.1.x/plant (where 'x' is the ip assigned by your network)
 
-
-
-*Readings from the DHT11 can be 1 minute off, but solved with software hack to keep continuous output (memoization), but do keep this in mind.*
-
 ## D8_PORTAL (important)
 
 1.) Upload both 'D8_PORTAL.ino' and 'index.h' ( both in same folder) and re-plug the board.
