@@ -1,10 +1,10 @@
 ////////////////////////////////
 // C O N F I G U R A T I O N  //
 ////////////////////////////////
-
 //EEPROM
 #include <EEPROM.h>
 int soil_addr = 0;
+int pump_addr = 1;
 
 // Webserver
 #include <ESP8266WiFi.h>
@@ -24,18 +24,14 @@ int power = true;
 
 // soil readings async
 unsigned long previousMillis_soil = 0;
-const long interval_soil = 300000; // 5 minutes default
+const long interval_soil = 300000; // 5 minutes default (in ms)1
 
 const int inBetweenies = 100; // delays between each read
 const int numReadings = 15;   // Increase to smooth more, but will slow down readings
 
 //    The interval between each read is 100ms, so 15 x 100 = 1500ms.
 //    This needs to be lower than "interval_soil" + 1000ms, or
-//    the readings will be unstable. The added 1000ms is to give a bit
-//    of leeway to the soilmeter's power input to suppres voltage spikes
-//    on the first few reads
-
-// * Serial print will notify if the limits are set wrong!
+//    the readings will be unstable.
 
 // dht readings async
 unsigned long previousMillis_dht = 0;
@@ -50,21 +46,21 @@ const int hygroJuice = 15; // pin power
 // leds
 const int brightness = 55; // 0 = off, 255 = fully lit
 
-const int sa1 = 2;  // [treshold]
-const int sa2 = 13; // [value]
-const int sa3 = 0;  // [standbyali]
+const int sa1 = 2;  // [pcb = led 2 ]
+const int sa2 = 13; // [pcb = led 3]
+const int sa3 = 0;  // [pcb = led 1]
 
 // LCD
 #include <LiquidCrystal_I2C.h>
 LiquidCrystal_I2C lcd(0x3f, 20, 4); // (memory address, columns, rows);
 
-// Capacative touch sensor
+// capacative touch sensor
 int TouchSensor = 14;
 boolean currentState = LOW;
 boolean lastState = LOW;
 boolean lightState = HIGH;
 
-// Smoothing variables
+// smoothing variables
 int readings[numReadings]; // the readings from the analog input
 int readIndex = 0;         // the index of the current reading
 int total = 0;             // the running total
@@ -77,6 +73,10 @@ int soil_avg;              // the smoothed output for all the functions
 #define DHTPIN 12     // pinDATA
 #define DHTTYPE DHT11 // sensor
 DHT dht(DHTPIN, DHTTYPE);
+
+// waterPUMP
+const int pumpPin = 1;
+int pump_power = 100;
 
 // end config  //
 ///////////////////////////////////////////////////////////////////////////////
@@ -111,12 +111,15 @@ void handleNotFound()
 
 void setup(void)
 {
-
+  // start includes if set
   Portal.begin();
+  //timeClient.begin(); *under construction*
+  Serial.begin(9600);
 
   // EEPROM
   EEPROM.begin(512);
   treshold = EEPROM.read(soil_addr);
+  pump_power = EEPROM.read(pump_addr);
 
   // lcd
   lcd.begin();
@@ -134,21 +137,26 @@ void setup(void)
   // touch sensor (stdby)
   pinMode(TouchSensor, INPUT);
 
+  // waterpump
+  pinMode(pumpPin, OUTPUT);
+
   // DHT11 sensor
   dht.begin();
 
-  // webserver
+  // esp led
   digitalWrite(sa3, 0);
 
+  // Routes
   server.on("/", handleRoot);
 
   server.on("/lights", lights);
-
   server.on("/data", dataState);
 
   server.on("/soil_reading", soil_readings);
+  server.on("/soilmem", soil_limit);
 
-  server.on("/soil_limit", soil_limit);
+  server.on("/pump", pump);
+  server.on("/pumpmem", pump_limit);
 
   server.onNotFound(handleNotFound);
 
@@ -187,6 +195,7 @@ void loop(void)
   unsigned long currentMillis_soil = millis();
   unsigned long currentMillis_dht = millis();
 
+  // StateMachines
   if (currentMillis_soil - previousMillis_soil >= interval_soil)
   {
     previousMillis_soil = currentMillis_soil;
@@ -208,23 +217,35 @@ void loop(void)
   delay(5);
 }
 
-////////////////////////
+////////////////////////  
 // F U N C T I O N S  //
 ////////////////////////
 
 // EEPROM config
-
 void soil_limit()
 {
-
   String soilValue = server.arg("soil_value");
-  int data = soilValue.toInt();
+  int data_soil = soilValue.toInt();
 
-  if (data <= 100 && data > 0)
+  if (data_soil <= 100 && data_soil > 0)
   {
-    EEPROM.write(soil_addr, data);
+    EEPROM.write(soil_addr, data_soil);
     EEPROM.commit();
-    treshold = data;
+    treshold = data_soil;
+    lcd_out();
+  }
+}
+
+void pump_limit()
+{
+  String pumpValue = server.arg("pump_value");
+  int data_pump = pumpValue.toInt();
+
+  if (data_pump <= 100 && data_pump > 0)
+  {
+    EEPROM.write(pump_addr, data_pump);
+    EEPROM.commit();
+    pump_power = data_pump;
     lcd_out();
   }
 }
@@ -244,7 +265,6 @@ int reading_passes; // soil iteratiosn while  loop
 // soil readings
 void soil_readings()
 {
-
   // Hygrometer
   digitalWrite(hygroJuice, HIGH);
 
@@ -252,19 +272,16 @@ void soil_readings()
   {
     analogWrite(sa3, brightness);
   }
-
   delay(990);
   Serial.println("Amount of numreadings = ");
   Serial.println(numReadings);
 
   if (digitalRead(hygroJuice) == HIGH)
   {
-
     reading_passes = 0;
 
     while (reading_passes < numReadings)
     {
-
       delay(inBetweenies);
 
       value = analogRead(hygrometer);
@@ -287,11 +304,11 @@ void soil_readings()
     digitalWrite(hygroJuice, LOW);
     analogWrite(sa3, 0);
   }
+  server.send(200, "text/plain", "done");
 }
 
 void dht_readings()
 {
-
   // Humidity + Temperature
   float a = dht.readHumidity();
   // Read temperature as Celsius
@@ -302,7 +319,6 @@ void dht_readings()
 
   if (!isnan(a) || !isnan(b))
   {
-
     currentHumidity = a;
     currentTemperature = b;
 
@@ -311,7 +327,6 @@ void dht_readings()
   }
   else
   {
-
     humid = previousHumidity;
     temp = previousTemperature;
   }
@@ -320,7 +335,6 @@ void dht_readings()
 // Serial OUT
 void serial_print()
 {
-
   Serial.write(12); // clear terminal
   Serial.println("-----------------------");
   Serial.print(" Air Humidity: ");
@@ -345,35 +359,21 @@ void serial_print()
   Serial.println("-----------------------");
 }
 
-// synced leds
-void sync_leds()
+// WATERPUMP CONTROL
+void pump()
 {
-
-  if (power == true)
-  {
-
-    if (soil_avg < treshold)
-    {
-      analogWrite(sa2, 0);
-      analogWrite(sa3, 0);
-
-      analogWrite(sa1, brightness); // treshold led
-      delay(100);
-      analogWrite(sa1, 0);
-      delay(100);
-    }
-    else
-    {
-      analogWrite(sa2, brightness);
-      analogWrite(sa1, LOW);
-    }
-  }
+  digitalWrite(pumpPin, HIGH);
+  delay(500);
+  digitalWrite(pumpPin, LOW);
+  server.send(200, "text/plain", "done");
+  delay(500);
+  soil_readings();
+  delay(1);
 }
 
 // LCD output
 void lcd_out()
 {
-
   if (!isnan(humid))
   {
     lcd.setCursor(0, 0);
@@ -398,13 +398,16 @@ void lcd_out()
     {
       lcd.setCursor(0, 3);
       lcd.print("* Needs watering!! *");
+      delay(1000);
+      pump();
+      delay(1000);
     }
     else
     {
       lcd.setCursor(0, 3);
       lcd.print("    treshold: ");
       lcd.print(treshold);
-      lcd.print("%");
+      lcd.print("%   ");
     }
   }
 }
@@ -412,7 +415,6 @@ void lcd_out()
 // Trigger lights function
 void touchBtn()
 {
-
   currentState = digitalRead(TouchSensor);
 
   if (currentState == HIGH && lastState == LOW)
@@ -428,7 +430,6 @@ void lights()
   delay(5);
   if (lightState == LOW)
   {
-
     lightState = HIGH;
     power = true;
 
@@ -445,12 +446,12 @@ void lights()
     digitalWrite(sa3, LOW);
     lcd.noBacklight();
   }
+  server.send(200, "text/plain", "done");
 }
 
 // Smoothing function (soil)
 void smoothing()
 {
-
   total = total - readings[readIndex]; // subtract the last reading
   readings[readIndex] = value;         // read from the soil sensor
   total = total + readings[readIndex]; // add the reading to the total
@@ -465,7 +466,6 @@ void smoothing()
 
 void soil_phase_print()
 {
-
   Serial.print("[ I T E R A T I O N : ");
   Serial.print(reading_passes);
   Serial.println(" ]");
@@ -533,6 +533,7 @@ void wifiReset()
   Serial.println("WiFi disconnected.");
 }
 
+// client data ajax
 void dataState()
 {
   int a = humid;
@@ -540,6 +541,7 @@ void dataState()
   int c = soil_avg;
   String d = "";
   int e = treshold;
+  int f = pump_power;
 
   if (power == true)
   {
@@ -561,5 +563,29 @@ void dataState()
   val += " ";
   val += e;
   val += " ";
+  val += f;
+  val += " ";
   server.send(200, "text/plain", val);
+}
+
+// synced leds
+void sync_leds()
+{
+
+  if (power == true)
+  {
+
+    if (soil_avg < treshold)
+    {
+      analogWrite(sa2, 0);
+      analogWrite(sa3, 0);
+
+      analogWrite(sa1, brightness); // treshold led
+    }
+    else
+    {
+      analogWrite(sa2, brightness);
+      analogWrite(sa1, LOW);
+    }
+  }
 }
