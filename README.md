@@ -42,7 +42,7 @@ Improvements:
 
 2.) SDA and SCL wires need to be swapped around (SDA -> SCL and vice versa)
 
-````following step is for D8HACK.ino, see bottom for PORTAL.ino + index.h
+```following step is for D8HACK.ino, see bottom for PORTAL.ino + index.h```
 3.) Enter your own SSID and PASSWORD in the "MAIN.ino" or "D8_hack.ino" file.
 
 4.) upload the code
