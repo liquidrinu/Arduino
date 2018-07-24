@@ -22,7 +22,7 @@ Current setup corrodes the soil meter real fast.
 
 The way to fix this is to wire pin **D8** to the **Vcc** of the soilmeter module, then upload **D8_hack.ino/D8_PORTAL.ino** on to the nodemcu.
 
-** cut one end of a female dupont cable, then solder the sliced end to the pin on the board, and plug the female connecter on the **Vcc** header of the **plant sensor module** **
+** cut one end of a female dupont cable, then solder the sliced end to the D8 pin on the board, and plug the female connecter on the **Vcc** header of the **plant sensor module** **
 
 Improvements:
 
