@@ -75,8 +75,8 @@ int soil_avg;              // the smoothed output for all the functions
 DHT dht(DHTPIN, DHTTYPE);
 
 // waterPUMP
-const int pumpPin = 1;
 int pump_power = 100;
+int pumpPin = 1; // overrides Serial capabilities
 
 // end config  //
 ///////////////////////////////////////////////////////////////////////////////
@@ -112,6 +112,7 @@ void handleNotFound()
 void setup(void)
 {
   // start includes if set
+
   Portal.begin();
   //timeClient.begin(); *under construction*
   Serial.begin(9600);
@@ -137,14 +138,14 @@ void setup(void)
   // touch sensor (stdby)
   pinMode(TouchSensor, INPUT);
 
-  // waterpump
-  pinMode(pumpPin, OUTPUT);
-
   // DHT11 sensor
   dht.begin();
 
   // esp led
   digitalWrite(sa3, 0);
+
+  // waterpump
+  pinMode(pumpPin, OUTPUT); // overrides Serial capabilities
 
   // Routes
   server.on("/", handleRoot);
@@ -204,11 +205,11 @@ void loop(void)
     lcd_out();
   }
 
+
   if (currentMillis_dht - previousMillis_dht >= interval_dht)
   {
     previousMillis_dht = currentMillis_dht;
     dht_readings();
-    lcd_out();
   }
 
   // active modules
@@ -217,7 +218,7 @@ void loop(void)
   delay(5);
 }
 
-////////////////////////  
+////////////////////////
 // F U N C T I O N S  //
 ////////////////////////
 
@@ -307,7 +308,7 @@ void soil_readings()
   server.send(200, "text/plain", "done");
 }
 
-void dht_readings()
+int dht_readings()
 {
   // Humidity + Temperature
   float a = dht.readHumidity();
@@ -322,13 +323,19 @@ void dht_readings()
     currentHumidity = a;
     currentTemperature = b;
 
-    humid = currentHumidity;
-    temp = currentTemperature;
-  }
-  else
-  {
-    humid = previousHumidity;
-    temp = previousTemperature;
+    if (currentHumidity != previousHumidity || currentTemperature != previousTemperature)
+    {
+      humid = currentHumidity;
+      temp = currentTemperature;
+      Serial.println("DHT readings changed");
+      lcd_out();
+    }
+    else
+    {
+      humid = previousHumidity;
+      temp = previousTemperature;
+    }
+    return 1;
   }
 }
 
@@ -363,7 +370,7 @@ void serial_print()
 void pump()
 {
   digitalWrite(pumpPin, HIGH);
-  delay(500);
+  delay(2000);
   digitalWrite(pumpPin, LOW);
   server.send(200, "text/plain", "done");
   delay(500);
@@ -399,7 +406,7 @@ void lcd_out()
       lcd.setCursor(0, 3);
       lcd.print("* Needs watering!! *");
       delay(1000);
-      pump();
+      //pump();
       delay(1000);
     }
     else
