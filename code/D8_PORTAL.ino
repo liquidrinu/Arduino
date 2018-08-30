@@ -75,8 +75,15 @@ int soil_avg;              // the smoothed output for all the functions
 DHT dht(DHTPIN, DHTTYPE);
 
 // waterPUMP
-int pump_power = 100;
 int pumpPin = 1; // overrides Serial capabilities
+int pump_power = 100;
+int pumpExecutionCount = 0;
+int pumpDuration = 500;
+
+unsigned long previousMillis_pump = 0;
+unsigned long previousMillis_pumpLock = 0;
+const long interval_pump = 300000; // 5 minutes
+const long interval_pumpLock = 3600000;     // 1 hour
 
 // end config  //
 ///////////////////////////////////////////////////////////////////////////////
@@ -177,7 +184,7 @@ void setup(void)
   }
 
   // TEST FUNCTION
-  lcd.clear();
+  //lcd.clear();
   test_init();
   dht_readings();
   soil_readings();
@@ -193,23 +200,37 @@ void loop(void)
 
   Portal.handleClient();
 
-  unsigned long currentMillis_soil = millis();
-  unsigned long currentMillis_dht = millis();
-
-  // StateMachines
-  if (currentMillis_soil - previousMillis_soil >= interval_soil)
+  // Soil readings async
+  if (millis() - previousMillis_soil >= interval_soil)
   {
-    previousMillis_soil = currentMillis_soil;
+    previousMillis_soil = millis();
     soil_readings();
     serial_print();
     lcd_out();
   }
 
-
-  if (currentMillis_dht - previousMillis_dht >= interval_dht)
+  // DHT readings async
+  if (millis() - previousMillis_dht >= interval_dht)
   {
-    previousMillis_dht = currentMillis_dht;
+    previousMillis_dht = millis();
     dht_readings();
+  }
+
+  // Pump Safety lock (default set to 1 hour)
+  if (millis() - previousMillis_pumpLock >= interval_pumpLock)
+  {
+    previousMillis_pumpLock = millis();
+    pumpExecutionCount = 0;
+  }
+
+  // Pump timer
+  if (millis() - previousMillis_pump >= interval_pump)
+  {
+    if (soil_avg < treshold)
+    {
+      pump();
+    }
+    previousMillis_pump = millis();
   }
 
   // active modules
@@ -335,7 +356,7 @@ int dht_readings()
       humid = previousHumidity;
       temp = previousTemperature;
     }
-    return 1;
+    return 0;
   }
 }
 
@@ -369,13 +390,18 @@ void serial_print()
 // WATERPUMP CONTROL
 void pump()
 {
-  digitalWrite(pumpPin, HIGH);
-  delay(2000);
-  digitalWrite(pumpPin, LOW);
-  server.send(200, "text/plain", "done");
-  delay(500);
-  soil_readings();
-  delay(1);
+  if (pumpExecutionCount < 5 ) {
+    digitalWrite(pumpPin, HIGH);
+    delay(pumpDuration);
+    digitalWrite(pumpPin, LOW);
+
+    server.send(200, "text/plain", "done");
+    soil_readings();
+    
+    pumpExecutionCount++;
+  } else {
+    server.send(200, "text/plain", "locked");
+  }
 }
 
 // LCD output
@@ -405,9 +431,6 @@ void lcd_out()
     {
       lcd.setCursor(0, 3);
       lcd.print("* Needs watering!! *");
-      delay(1000);
-      //pump();
-      delay(1000);
     }
     else
     {
