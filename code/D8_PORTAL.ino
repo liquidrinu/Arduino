@@ -181,7 +181,7 @@ void setup(void)
   // Routes
   server.on("/", handleRoot);
 
-  //server.on("/lights", control.lights);
+  server.on("/lights", lights);
   server.on("/data", dataState);
 
   server.on("/soil_reading", soil_readings);
