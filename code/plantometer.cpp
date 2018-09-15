@@ -1,6 +1,5 @@
 #include "Arduino.h"
 #include "plantometer.hpp"
-#include <LiquidCrystal_I2C.h>
 
 bool Plant::tracker(long interval)
 {
