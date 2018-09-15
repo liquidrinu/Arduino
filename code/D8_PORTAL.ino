@@ -1,6 +1,7 @@
 ////////////////////////////////
 // C O N F I G U R A T I O N  //
 ////////////////////////////////
+
 //EEPROM
 #include <EEPROM.h>
 int soil_addr = 0;
@@ -16,15 +17,39 @@ ESP8266WebServer server(80);
 AutoConnect Portal(server);
 AutoConnect portal;
 
-// HTML
-#include "index.h"
-
 // general settings
 int power = true;
 
-// soil readings async
-unsigned long previousMillis_soil = 0;
-const long interval_soil = 300000; // 5 minutes default (in ms)1
+// HTML
+#include "index.h"
+
+// Time NTP
+#include <time.h>
+int timezone = 2 * 3600;
+int dst = 1;
+String currentTime;
+
+// LCD
+#include <LiquidCrystal_I2C.h>
+LiquidCrystal_I2C lcd(0x3f, 20, 4); // (memory address, columns, rows);
+
+// ** Plant-0-meter library  **
+#include <plantometer.hpp>
+
+// Async event based operations
+long interval_soil = 300000;
+
+Plant dht_plant;
+Plant soil_plant;
+Plant pump_timer;
+Plant pump_lock;
+Plant TIME;
+
+// touch button *lights+display
+int TouchSensor = 14;
+int currentState = LOW;
+int lastState = LOW;
+int lightState = HIGH;
 
 const int inBetweenies = 100; // delays between each read
 const int numReadings = 15;   // Increase to smooth more, but will slow down readings
@@ -33,10 +58,6 @@ const int numReadings = 15;   // Increase to smooth more, but will slow down rea
 //    This needs to be lower than "interval_soil" + 1000ms, or
 //    the readings will be unstable.
 
-// dht readings async
-unsigned long previousMillis_dht = 0;
-const long interval_dht = 2000;
-
 // soil
 int treshold = 20; // 'dry'
 
@@ -44,21 +65,14 @@ const int hygrometer = A0; // pin data
 const int hygroJuice = 15; // pin power
 
 // leds
-const int brightness = 55; // 0 = off, 255 = fully lit
+const int brightness = 25; // 0 = off, 255 = fully lit
 
 const int sa1 = 2;  // [pcb = led 2 ]
 const int sa2 = 13; // [pcb = led 3]
 const int sa3 = 0;  // [pcb = led 1]
 
-// LCD
-#include <LiquidCrystal_I2C.h>
-LiquidCrystal_I2C lcd(0x3f, 20, 4); // (memory address, columns, rows);
-
-// capacative touch sensor
-int TouchSensor = 14;
-boolean currentState = LOW;
-boolean lastState = LOW;
-boolean lightState = HIGH;
+// External Environment Lighting
+const int lights_external = 10;
 
 // smoothing variables
 int readings[numReadings]; // the readings from the analog input
@@ -78,12 +92,7 @@ DHT dht(DHTPIN, DHTTYPE);
 int pumpPin = 1; // overrides Serial capabilities
 int pump_power = 100;
 int pumpExecutionCount = 0;
-int pumpDuration = 500;
-
-unsigned long previousMillis_pump = 0;
-unsigned long previousMillis_pumpLock = 0;
-const long interval_pump = 300000; // 5 minutes
-const long interval_pumpLock = 3600000;     // 1 hour
+int pumpDuration = 2000;
 
 // end config  //
 ///////////////////////////////////////////////////////////////////////////////
@@ -142,6 +151,21 @@ void setup(void)
   pinMode(sa2, OUTPUT);
   pinMode(sa3, OUTPUT);
 
+  // external lighting
+  pinMode(lights_external, OUTPUT);
+  digitalWrite(lights_external, HIGH);
+
+  // TIME
+  configTime(timezone, dst, "pool.ntp.org", "time.nist.gov");
+  Serial.println("\nWaiting for Internet time");
+
+  while (!time(nullptr))
+  {
+    Serial.print("*");
+    delay(1000);
+  }
+  Serial.println("\nTime response....OK");
+
   // touch sensor (stdby)
   pinMode(TouchSensor, INPUT);
 
@@ -152,18 +176,18 @@ void setup(void)
   digitalWrite(sa3, 0);
 
   // waterpump
-  pinMode(pumpPin, OUTPUT); // overrides Serial capabilities
+  pinMode(pumpPin, OUTPUT); // overrides Serial (monitor) capabilities
 
   // Routes
   server.on("/", handleRoot);
 
-  server.on("/lights", lights);
+  //server.on("/lights", control.lights);
   server.on("/data", dataState);
 
   server.on("/soil_reading", soil_readings);
   server.on("/soilmem", soil_limit);
 
-  server.on("/pump", pump);
+  server.on("/pump", pumpWater);
   server.on("/pumpmem", pump_limit);
 
   server.onNotFound(handleNotFound);
@@ -201,36 +225,38 @@ void loop(void)
   Portal.handleClient();
 
   // Soil readings async
-  if (millis() - previousMillis_soil >= interval_soil)
+  if (soil_plant.tracker(interval_soil))
   {
-    previousMillis_soil = millis();
     soil_readings();
     serial_print();
     lcd_out();
   }
 
-  // DHT readings async
-  if (millis() - previousMillis_dht >= interval_dht)
+  if (dht_plant.tracker(2000))
   {
-    previousMillis_dht = millis();
     dht_readings();
+  };
+
+  // Pump timer
+  if (soil_avg < treshold)
+  {
+    if (pump_timer.tracker(300000))
+    {
+      pumpWater();
+    }
   }
 
   // Pump Safety lock (default set to 1 hour)
-  if (millis() - previousMillis_pumpLock >= interval_pumpLock)
+  if (pump_lock.tracker(3600000))
   {
-    previousMillis_pumpLock = millis();
     pumpExecutionCount = 0;
   }
 
-  // Pump timer
-  if (millis() - previousMillis_pump >= interval_pump)
+  // TIME server
+  if (TIME.tracker(1000))
   {
-    if (soil_avg < treshold)
-    {
-      pump();
-    }
-    previousMillis_pump = millis();
+    displayTime();
+    lcd_out();
   }
 
   // active modules
@@ -249,7 +275,7 @@ void soil_limit()
   String soilValue = server.arg("soil_value");
   int data_soil = soilValue.toInt();
 
-  if (data_soil <= 100 && data_soil > 0)
+  if (data_soil < 99 && data_soil > 9)
   {
     EEPROM.write(soil_addr, data_soil);
     EEPROM.commit();
@@ -271,8 +297,7 @@ void pump_limit()
     lcd_out();
   }
 }
-
-int value; // soil data
+//////////////////////////////////////////////////////////
 
 // memoization for faulty readings (dht11)
 int currentHumidity;
@@ -285,6 +310,8 @@ int temp;
 int reading_passes; // soil iteratiosn while  loop
 
 // soil readings
+int soilValue; // soil data
+
 void soil_readings()
 {
   // Hygrometer
@@ -306,9 +333,9 @@ void soil_readings()
     {
       delay(inBetweenies);
 
-      value = analogRead(hygrometer);
-      value = constrain(value, 400, 1023);
-      value = map(value, 1023, 400, 0, 100);
+      soilValue = analogRead(hygrometer);
+      soilValue = constrain(soilValue, 400, 1023);
+      soilValue = map(soilValue, 1023, 400, 0, 100);
 
       smoothing(); // populate array
 
@@ -375,7 +402,7 @@ void serial_print()
   Serial.print(soil_avg);
   Serial.print("%");
 
-  if (value < treshold)
+  if (soilValue < treshold)
   {
     Serial.println(" ** Needs watering! **");
   }
@@ -388,18 +415,21 @@ void serial_print()
 }
 
 // WATERPUMP CONTROL
-void pump()
+void pumpWater()
 {
-  if (pumpExecutionCount < 5 ) {
+  if (pumpExecutionCount < 5)
+  {
     digitalWrite(pumpPin, HIGH);
     delay(pumpDuration);
     digitalWrite(pumpPin, LOW);
 
     server.send(200, "text/plain", "done");
     soil_readings();
-    
+
     pumpExecutionCount++;
-  } else {
+  }
+  else
+  {
     server.send(200, "text/plain", "locked");
   }
 }
@@ -421,7 +451,7 @@ void lcd_out()
     lcd.print(temp);
     lcd.print(" C");
   }
-  if (!isnan(value))
+  if (!isnan(soilValue))
   {
     lcd.setCursor(0, 2);
     lcd.print("Soil     : ");
@@ -430,14 +460,16 @@ void lcd_out()
     if (soil_avg < treshold)
     {
       lcd.setCursor(0, 3);
-      lcd.print("* Needs watering!! *");
+      lcd.print("*Needs Watering!*");
     }
     else
     {
       lcd.setCursor(0, 3);
-      lcd.print("    treshold: ");
+      //lcd.print("    treshold: ");
+      lcd.print("TH ");
       lcd.print(treshold);
-      lcd.print("%   ");
+      lcd.print("% ");
+      lcd.print(currentTime);
     }
   }
 }
@@ -455,6 +487,7 @@ void touchBtn()
 }
 
 // Turn on/off display and leds.
+
 void lights()
 {
   delay(5);
@@ -483,7 +516,7 @@ void lights()
 void smoothing()
 {
   total = total - readings[readIndex]; // subtract the last reading
-  readings[readIndex] = value;         // read from the soil sensor
+  readings[readIndex] = soilValue;     // read from the soil sensor
   total = total + readings[readIndex]; // add the reading to the total
   readIndex = readIndex + 1;           // advance to the next position in the array
 
@@ -504,7 +537,7 @@ void soil_phase_print()
   Serial.print("Current array value = ");
   Serial.println(readings[readIndex]);
   Serial.print("Current analog reading = ");
-  Serial.print(value);
+  Serial.print(soilValue);
   Serial.println(" (direct)");
   Serial.print("Current total = ");
   Serial.println(total);
@@ -615,7 +648,76 @@ void sync_leds()
     else
     {
       analogWrite(sa2, brightness);
-      analogWrite(sa1, LOW);
+      analogWrite(sa1, 0);
     }
   }
+}
+
+// time sync
+void timeSync()
+{
+  time_t now = time(nullptr);
+  struct tm *p_tm = localtime(&now);
+  Serial.print(p_tm->tm_mday);
+  Serial.print("/");
+  Serial.print(p_tm->tm_mon + 1);
+  Serial.print("/");
+  Serial.print(p_tm->tm_year + 1900);
+
+  Serial.print(" ");
+
+  Serial.print(p_tm->tm_hour);
+  Serial.print(":");
+  Serial.print(p_tm->tm_min);
+  Serial.print(":");
+  Serial.println(p_tm->tm_sec);
+}
+
+// Display time method
+int displayTime()
+{
+  time_t now = time(nullptr);
+  struct tm *p_tm = localtime(&now);
+  String currentTimeFormat = "";
+  String HOUR = "";
+  String MINUTE = "";
+  String SECOND = "";
+
+  if (p_tm->tm_hour < 10)
+  {
+    HOUR += "0";
+    HOUR += p_tm->tm_hour;
+  }
+  else
+  {
+    HOUR = p_tm->tm_hour;
+  }
+
+  if (p_tm->tm_min < 10)
+  {
+    MINUTE += "0";
+    MINUTE += p_tm->tm_min;
+  }
+  else
+  {
+    MINUTE = p_tm->tm_min;
+  }
+
+  if (p_tm->tm_sec < 10)
+  {
+    SECOND += "0";
+    SECOND += p_tm->tm_sec;
+  }
+  else
+  {
+    SECOND = p_tm->tm_sec;
+  }
+
+  currentTimeFormat += "     ";
+  currentTimeFormat += HOUR;
+  currentTimeFormat += ":";
+  currentTimeFormat += MINUTE;
+  currentTimeFormat += ":";
+  currentTimeFormat += SECOND;
+  currentTime = currentTimeFormat;
 }
