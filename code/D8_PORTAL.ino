@@ -208,7 +208,7 @@ void setup(void)
   }
 
   // TEST FUNCTION
-  //lcd.clear();
+
   test_init();
   dht_readings();
   soil_readings();
@@ -221,7 +221,6 @@ void setup(void)
 
 void loop(void)
 {
-
   Portal.handleClient();
 
   // Soil readings async
@@ -232,7 +231,7 @@ void loop(void)
     lcd_out();
   }
 
-  if (dht_plant.tracker(2000))
+  if (dht_plant.tracker(5000))
   {
     dht_readings();
   };
@@ -260,9 +259,12 @@ void loop(void)
   }
 
   // active modules
+
   sync_leds();
   touchBtn();
-  delay(5);
+  /*
+    delay(5);
+  */
 }
 
 ////////////////////////
@@ -375,7 +377,7 @@ int dht_readings()
     {
       humid = currentHumidity;
       temp = currentTemperature;
-      Serial.println("DHT readings changed");
+      //Serial.println("DHT readings changed");
       lcd_out();
     }
     else
@@ -437,37 +439,43 @@ void pumpWater()
 // LCD output
 void lcd_out()
 {
+  char row1[21];
+  char row2[21];
+  char row3[21];
+  char row4[21];
+
   if (!isnan(humid))
   {
     lcd.setCursor(0, 0);
-    lcd.print("Humidity : ");
-    lcd.print(humid);
+    sprintf(row1, "Humidity : %d", humid);
+    lcd.print(row1);
     lcd.print(" %");
   }
   if (!isnan(temp))
   {
     lcd.setCursor(0, 1);
-    lcd.print("Temp     : ");
-    lcd.print(temp);
-    lcd.print(" C");
+    sprintf(row2, "Temp     : %d", temp);
+    lcd.print(row2);
+    lcd.print(" c");
   }
   if (!isnan(soilValue))
   {
     lcd.setCursor(0, 2);
-    lcd.print("Soil     : ");
-    lcd.print(soil_avg);
+    sprintf(row3, "Soil     : %d", soil_avg);
+    lcd.print(row3);
     lcd.print(" %");
+
     if (soil_avg < treshold)
     {
       lcd.setCursor(0, 3);
-      lcd.print("*Needs Watering!*");
+      sprintf(row4, "*Needs Watering!*");
+      lcd.print(row4);
     }
     else
     {
       lcd.setCursor(0, 3);
-      //lcd.print("    treshold: ");
-      lcd.print("TH ");
-      lcd.print(treshold);
+      sprintf(row4, "TH %d", treshold);
+      lcd.print(row4);
       lcd.print("% ");
       lcd.print(currentTime);
     }
