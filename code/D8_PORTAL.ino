@@ -18,9 +18,10 @@ AutoConnect Portal(server);
 AutoConnect portal;
 
 // general settings
-int power = true;
+int displayLcd = true;
+int lights = false;
 
-// HTML
+// html + css + js
 #include "index.h"
 
 // Time NTP
@@ -45,11 +46,14 @@ Plant pump_timer;
 Plant pump_lock;
 Plant TIME;
 
-// touch button *lights+display
+// touch button *leds+display
 int TouchSensor = 14;
-int currentState = LOW;
-int lastState = LOW;
-int lightState = HIGH;
+
+// soil
+int treshold = 20; // 'dry'
+
+const int hygrometer = A0; // pin data
+const int hygroJuice = 15; // pin power
 
 const int inBetweenies = 100; // delays between each read
 const int numReadings = 15;   // Increase to smooth more, but will slow down readings
@@ -58,11 +62,10 @@ const int numReadings = 15;   // Increase to smooth more, but will slow down rea
 //    This needs to be lower than "interval_soil" + 1000ms, or
 //    the readings will be unstable.
 
-// soil
-int treshold = 20; // 'dry'
-
-const int hygrometer = A0; // pin data
-const int hygroJuice = 15; // pin power
+int readings[numReadings]; // the readings from the analog input
+int readIndex = 0;         // the index of the current reading
+int total = 0;             // the running total
+int average = 0;           // the average
 
 // leds
 const int brightness = 25; // 0 = off, 255 = fully lit
@@ -75,11 +78,7 @@ const int sa3 = 0;  // [pcb = led 1]
 const int lights_external = 10;
 
 // smoothing variables
-int readings[numReadings]; // the readings from the analog input
-int readIndex = 0;         // the index of the current reading
-int total = 0;             // the running total
-int average = 0;           // the average
-int soil_avg;              // the smoothed output for all the functions
+int soil_avg; // the smoothed output for all the functions
 
 // humidity/temp
 #include <Adafruit_Sensor.h>
@@ -92,7 +91,7 @@ DHT dht(DHTPIN, DHTTYPE);
 int pumpPin = 1; // overrides Serial capabilities
 int pump_power = 100;
 int pumpExecutionCount = 0;
-int pumpDuration = 2000;
+int pumpDuration = 3000;
 
 // end config  //
 ///////////////////////////////////////////////////////////////////////////////
@@ -153,7 +152,7 @@ void setup(void)
 
   // external lighting
   pinMode(lights_external, OUTPUT);
-  digitalWrite(lights_external, HIGH);
+  digitalWrite(lights_external, LOW);
 
   // TIME
   configTime(timezone, dst, "pool.ntp.org", "time.nist.gov");
@@ -181,14 +180,16 @@ void setup(void)
   // Routes
   server.on("/", handleRoot);
 
-  server.on("/lights", lights);
-  server.on("/data", dataState);
+  server.on("/display", displayToggle);
+  server.on("/lights", lightSwitch);
 
   server.on("/soil_reading", soil_readings);
   server.on("/soilmem", soil_limit);
 
   server.on("/pump", pumpWater);
   server.on("/pumpmem", pump_limit);
+
+  server.on("/data", dataState);
 
   server.onNotFound(handleNotFound);
 
@@ -319,7 +320,7 @@ void soil_readings()
   // Hygrometer
   digitalWrite(hygroJuice, HIGH);
 
-  if (power == true)
+  if (displayLcd == true)
   {
     analogWrite(sa3, brightness);
   }
@@ -358,6 +359,7 @@ void soil_readings()
   server.send(200, "text/plain", "done");
 }
 
+/////////////////////////////////////////////////////////////////////////
 int dht_readings()
 {
   // Humidity + Temperature
@@ -483,33 +485,59 @@ void lcd_out()
 }
 
 // Trigger lights function
+void lightSwitch()
+{
+  static int lightState = HIGH;
+
+  delay(5);
+  if (lightState == LOW)
+  {
+    lightState = HIGH;
+    lights = true;
+    digitalWrite(lights_external, HIGH);
+  }
+  else
+  {
+    lightState = LOW;
+    lights = false;
+    digitalWrite(lights_external, LOW);
+  }
+  server.send(200, "text/plain", "done");
+}
+
+// trigger Display + leds
 void touchBtn()
 {
+  static int currentState = LOW;
+  static int lastState = LOW;
+
   currentState = digitalRead(TouchSensor);
 
   if (currentState == HIGH && lastState == LOW)
   {
-    lights();
+    displayToggle();
   }
   lastState = currentState;
 }
 
 // Turn on/off display and leds.
 
-void lights()
+void displayToggle()
 {
+  static int lcdState = HIGH;
+
   delay(5);
-  if (lightState == LOW)
+  if (lcdState == LOW)
   {
-    lightState = HIGH;
-    power = true;
+    lcdState = HIGH;
+    displayLcd = true;
 
     lcd.backlight();
   }
   else
   {
-    lightState = LOW;
-    power = false;
+    lcdState = LOW;
+    displayLcd = false;
 
     // turn off leds and screen
     digitalWrite(sa1, LOW);
@@ -520,6 +548,7 @@ void lights()
   server.send(200, "text/plain", "done");
 }
 
+///////////////////////////////////////////////////////////////////////////
 // Smoothing function (soil)
 void smoothing()
 {
@@ -577,7 +606,6 @@ void test_init()
 // error handling for soil timings
 void soil_error()
 {
-
   if ((numReadings * inBetweenies) + 1000 > interval_soil)
   {
     Serial.println("");
@@ -587,6 +615,7 @@ void soil_error()
   }
 }
 
+/////////////////////////////////////////////////
 // wifi reset
 void wifiReset()
 {
@@ -610,17 +639,27 @@ void dataState()
   int a = humid;
   int b = temp;
   int c = soil_avg;
-  String d = "";
+  String displaystate = "";
+  String lightstate = "";
   int e = treshold;
   int f = pump_power;
 
-  if (power == true)
+  if (displayLcd == true)
   {
-    d = "on";
+    displaystate = "on";
   }
   else
   {
-    d = "off";
+    displaystate = "off";
+  }
+
+  if (lights == true)
+  {
+    lightstate = "on";
+  }
+  else
+  {
+    lightstate = "off";
   }
 
   String val = "";
@@ -630,7 +669,9 @@ void dataState()
   val += " ";
   val += c;
   val += " ";
-  val += d;
+  val += displaystate;
+  val += " ";
+  val += lightstate;
   val += " ";
   val += e;
   val += " ";
@@ -643,7 +684,7 @@ void dataState()
 void sync_leds()
 {
 
-  if (power == true)
+  if (displayLcd == true)
   {
 
     if (soil_avg < treshold)
