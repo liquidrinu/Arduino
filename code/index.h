@@ -23,6 +23,12 @@ const char MAIN_page[] PROGMEM = R"=====(
       touch-action: manipulation;
     }
 
+    center {
+      max-width: 600px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
     #header {
       background-color: #dc0567;
       color: white;
@@ -58,10 +64,16 @@ const char MAIN_page[] PROGMEM = R"=====(
       font-size: 22px;
       width: 90%;
       height: 48px;
-      margin: 4px;
       border: solid #dc0567 2px;
       background-color: black;
     }
+    
+    .controls div button {
+      display: inline-block;
+      width: 45%;
+      font-size: 22px;
+    }
+   
 
     input {
       text-align: center;
@@ -154,15 +166,20 @@ const char MAIN_page[] PROGMEM = R"=====(
       <div id="soil" class="data"></div>
       <div id="breaker"></div>
       <div id="display" class="power"></div>
+      <div id="lights" class="power"></div>
       <div id="treshold" class="power"></div>
-      <div id="pump" class="power"></div>
     </div>
 
     <div class="controls">
+      <div>
+        <button type="button" id="displayBtn" onclick="ajaxBtn('display', 'displayBtn')">
+          display
+        </button>
 
-      <button type="button" id="lightBtn" onclick="ajaxBtn('lights', 'lightBtn')">
-        lights
-      </button>
+        <button type="button" id="lightBtn" onclick="ajaxBtn('lights', 'lightBtn')">
+          lights
+        </button>
+      </div>
 
       <button type="button" id="soilBtn" onclick="ajaxBtn('soil_reading', 'soilBtn')">
         soil reading
@@ -177,19 +194,9 @@ const char MAIN_page[] PROGMEM = R"=====(
     <div class="config">
 
       <div>
-        <input id="soil_input" placeholder="treshold 0 - 100" type="number" autocomplete="off" autocorrect="off" autocapitalize="off"
-          spellcheck="false" />
+        <input id="soil_input" placeholder="treshold 0 - 100" type="number" autocomplete="off" autocorrect="off"
+          autocapitalize="off" spellcheck="false" />
         <button type="button" onclick="soil_limit()">
-          submit
-        </button>
-      </div>
-    </div>
-
-    <div class="config">
-      <div>
-        <input id="pump_input" placeholder="pump power 0 - 100" type="number" autocomplete="off" autocorrect="off" autocapitalize="off"
-          spellcheck="false" />
-        <button type="button" onclick="pump_limit()">
           submit
         </button>
       </div>
@@ -218,7 +225,7 @@ const char MAIN_page[] PROGMEM = R"=====(
             document.getElementById("pumpBtn").innerHTML = '* LOCKED *';
             document.getElementById(id).classList.remove('blinkBtn');
           }
-      
+
         }
       };
       xhttp.open("POST", url, true);
@@ -242,10 +249,10 @@ const char MAIN_page[] PROGMEM = R"=====(
     function fullState(val) {
 
       let str = val.split(" ", 6);
-      let value = ["humidity", "temperature", "soil", "display", "treshold", "pump"];
-      let symbol = ["%", "C", "%", "", "%", "%"];
+      let value = ["humidity", "temperature", "soil", "display", "lights", "treshold"];
+      let symbol = ["%", "C", "%", "", "", "%"];
 
-      for (let i = 0; i <= 5; i++) {
+      for (let i = 0; i < value.length; i++) {
         if (str[i] !== null || str[i] !== "undefined") {
           divider(str[i], symbol[i], value[i]);
         }
@@ -254,19 +261,21 @@ const char MAIN_page[] PROGMEM = R"=====(
       function divider(str, symbol, value) {
         let output = "";
         let colorClass = "";
-      
-        if (str === "on" && value === "display") {
-          output = value + ": ";
-          colorClass = "<span class='colorOn'>" + str + "</span>";
-          output += colorClass;
-          document.getElementById(value).innerHTML =
-            output;
-        } else if (str === "off" && value === "display") {
-          output = value + ": ";
-          colorClass = "<span class='colorOff'>" + str + "</span>";
-          output += colorClass;
-          document.getElementById(value).innerHTML =
-           output;
+
+        if (value === "display" || value === "lights") {
+          if (str === "on") {
+            output = value + ": ";
+            colorClass = "<span class='colorOn'>" + str + "</span>";
+            output += colorClass;
+            document.getElementById(value).innerHTML =
+              output;
+          } else {
+            output = value + ": ";
+            colorClass = "<span class='colorOff'>" + str + "</span>";
+            output += colorClass;
+            document.getElementById(value).innerHTML =
+              output;
+          }
         } else {
           output = value + ": " + str + symbol;
           document.getElementById(value).innerHTML =
@@ -283,7 +292,7 @@ const char MAIN_page[] PROGMEM = R"=====(
 
       z = y.value;
 
-      if (z < 100 && z > 0 && z !== "") {
+      if (z < 99 && z > 9 && z !== "") {
         let xhttp = new XMLHttpRequest();
         xhttp.onreadystatechange = function () {
           if (this.readyState == 4 && this.status == 200) {
