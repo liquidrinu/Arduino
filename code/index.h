@@ -167,6 +167,7 @@ const char MAIN_page[] PROGMEM = R"=====(
       <div id="breaker"></div>
       <div id="display" class="power"></div>
       <div id="lights" class="power"></div>
+      <div id="pump" class="power"></div>
       <div id="treshold" class="power"></div>
     </div>
 
@@ -248,9 +249,9 @@ const char MAIN_page[] PROGMEM = R"=====(
 
     function fullState(val) {
 
-      let str = val.split(" ", 6);
-      let value = ["humidity", "temperature", "soil", "display", "lights", "treshold"];
-      let symbol = ["%", "C", "%", "", "", "%"];
+      let str = val.split(" ", 7);
+      let value = ["humidity", "temperature", "soil", "display", "lights", "treshold", "pump"];
+      let symbol = ["%", "C", "%", "", "", "%",""];
 
       for (let i = 0; i < value.length; i++) {
         if (str[i] !== null || str[i] !== "undefined") {
@@ -262,7 +263,7 @@ const char MAIN_page[] PROGMEM = R"=====(
         let output = "";
         let colorClass = "";
 
-        if (value === "display" || value === "lights") {
+        if (value === "display" || value === "lights" || value === "pump") {
           if (str === "on") {
             output = value + ": ";
             colorClass = "<span class='colorOn'>" + str + "</span>";
