@@ -129,7 +129,6 @@ void setup(void)
   // start includes if set
 
   Portal.begin();
-  //timeClient.begin(); *under construction*
   Serial.begin(9600);
 
   // EEPROM
@@ -175,7 +174,7 @@ void setup(void)
   digitalWrite(sa3, 0);
 
   // waterpump
-  pinMode(pumpPin, OUTPUT); // overrides Serial (monitor) capabilities
+  // pinMode(pumpPin, OUTPUT); // overrides Serial (monitor) capabilities
 
   // Routes
   server.on("/", handleRoot);
@@ -260,12 +259,9 @@ void loop(void)
   }
 
   // active modules
-
+  TIMER(22, 8); // lights out 10pm to 8am
   sync_leds();
   touchBtn();
-  /*
-    delay(5);
-  */
 }
 
 ////////////////////////
@@ -421,6 +417,8 @@ void serial_print()
 // WATERPUMP CONTROL
 void pumpWater()
 {
+  pinMode(pumpPin, OUTPUT); // overrides Serial (monitor) capabilities
+
   if (pumpExecutionCount < 5)
   {
     digitalWrite(pumpPin, HIGH);
@@ -436,6 +434,16 @@ void pumpWater()
   {
     server.send(200, "text/plain", "locked");
   }
+}
+
+// Check pump connection
+boolean pumpStatus () {
+  pinMode(pumpPin, INPUT); // overrides Serial (monitor) capabilities
+
+  if (!digitalRead(pumpPin)) {
+    return true;
+  }
+  return false;
 }
 
 // LCD output
@@ -504,6 +512,7 @@ void lightSwitch()
   }
   server.send(200, "text/plain", "done");
 }
+
 
 // trigger Display + leds
 void touchBtn()
@@ -642,7 +651,7 @@ void dataState()
   String displaystate = "";
   String lightstate = "";
   int e = treshold;
-  int f = pump_power;
+  String pumpstate = "";
 
   if (displayLcd == true)
   {
@@ -662,6 +671,17 @@ void dataState()
     lightstate = "off";
   }
 
+
+  if (pumpStatus())
+  {
+    pumpstate = "on";
+  }
+  else
+  {
+    pumpstate = "off";
+  }
+
+
   String val = "";
   val += a;
   val += " ";
@@ -675,7 +695,7 @@ void dataState()
   val += " ";
   val += e;
   val += " ";
-  val += f;
+  val += pumpstate;
   val += " ";
   server.send(200, "text/plain", val);
 }
@@ -769,4 +789,33 @@ int displayTime()
   currentTimeFormat += ":";
   currentTimeFormat += SECOND;
   currentTime = currentTimeFormat;
+}
+
+void TIMER(int timerON, int timerOFF)
+{
+  time_t now = time(nullptr);
+  struct tm *p_tm = localtime(&now);
+
+  static int timeLockStart = false;
+  static int timeLockEnd = false;
+
+  if (p_tm->tm_hour == timerON && timeLockStart == false)
+  {
+    timeLockStart = true;
+    timeLockEnd = true;
+    if (lcd.getBacklight())
+    {
+      displayToggle();
+    }
+  };
+
+  if (p_tm->tm_hour == timerOFF && timeLockEnd == true)
+  {
+    timeLockStart = false;
+    timeLockEnd = false;
+    if (!lcd.getBacklight())
+    {
+      displayToggle();
+    }
+  }
 }
