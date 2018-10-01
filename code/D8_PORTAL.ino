@@ -478,7 +478,7 @@ void lcd_out()
     if (soil_avg < treshold)
     {
       lcd.setCursor(0, 3);
-      sprintf(row4, "*Needs Watering!*");
+      sprintf(row4, "  *Needs Watering!* ");
       lcd.print(row4);
     }
     else
