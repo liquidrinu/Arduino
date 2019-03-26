@@ -1,1 +1,1 @@
-This folder contains old versions of teh code
+This folder contains old versions of the source
